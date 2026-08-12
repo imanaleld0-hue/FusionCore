@@ -35,6 +35,10 @@ jobs:
       run: |
         sdkmanager --install "ndk;25.1.8937393"
 
+    - name: Install CMake
+      run: |
+        sdkmanager --install "cmake;3.31.1"
+
     - name: Grant Execute Permission for Gradlew
       run: chmod +x gradlew
 

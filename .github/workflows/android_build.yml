@@ -2,10 +2,10 @@ name: Android Build
 
 on:
   push:
-    branches: [ "main" ] # Сборка будет запускаться при каждом пуше в ветку main
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  workflow_dispatch: # Позволяет запускать сборку вручную кнопкой на GitHub
+  workflow_dispatch:
 
 jobs:
   build:
@@ -21,22 +21,23 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: gradle
-    - name: Set up Android NDK and CMake
-      uses: nttld/setup-ndk@v1
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
       with:
-        ndk-version: r26b
-        add-to-path: true
-    
-    - name: Install CMake
+        log-accepted-android-sdk-licenses: true
+
+    - name: Install Android NDK
       run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake
+        sdkmanager --install "ndk;25.1.8937393"
 
     - name: Grant Execute Permission for Gradlew
       run: chmod +x gradlew
 
     - name: Build Debug APK
-      run: ./gradlew clean :fusionApp:assembleDebug
+      run: ./gradlew clean :fusionApp:assembleDebug -Pandroid.ndkVersion=25.1.8937393
+      env:
+        ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.1.8937393
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4

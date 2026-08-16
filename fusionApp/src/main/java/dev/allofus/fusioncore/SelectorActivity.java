@@ -202,25 +202,7 @@ startActivity(intent);
         }
         return Environment.isExternalStorageManager();
     }
-    private void setCurrentAction(String action) {
-    runOnUiThread(() -> {
-        if (currentAction != null) {
-            currentAction.setText("Current action: " + action);
-        }
-
-        addLog(action);
-    });
-}
-
-    private void setCurrentAction(String action) {
-    runOnUiThread(() -> {
-        if (currentAction != null) {
-            currentAction.setText("Current action: " + action);
-        }
-
-        addLog(action);
-    });
-}
+ 
 
         Toast.makeText(this, getString(R.string.selector_storage_permission_prompt), Toast.LENGTH_LONG).show();
         Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);

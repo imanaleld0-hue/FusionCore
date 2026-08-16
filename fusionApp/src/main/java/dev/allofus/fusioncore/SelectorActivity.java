@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SelectorActivity extends Activity {
+    
     private static final String TAG = "FusionCore";
     private static final int REQUEST_MANAGE_EXTERNAL_STORAGE = 1001;
 
@@ -199,6 +200,15 @@ public class SelectorActivity extends Activity {
         }
         return Environment.isExternalStorageManager();
     }
+    private void setCurrentAction(String action) {
+    runOnUiThread(() -> {
+        if (currentAction != null) {
+            currentAction.setText("Current action: " + action);
+        }
+
+        addLog(action);
+    });
+}
 
     private void requestExternalStorageManagerAccess() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {

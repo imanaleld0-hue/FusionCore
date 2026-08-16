@@ -34,6 +34,7 @@ public class SelectorActivity extends Activity {
     private static final int REQUEST_MANAGE_EXTERNAL_STORAGE = 1001;
 
     private String pendingLaunchPackage;
+    private ImageButton settingsButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +90,7 @@ public class SelectorActivity extends Activity {
             maybeLaunchBootstrap(selected.packageName);
         });
 
+        settingsButton = findViewById(R.id.selector_action_settings);
         settingsButton.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
     }
 

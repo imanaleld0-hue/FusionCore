@@ -89,10 +89,7 @@ public class SelectorActivity extends Activity {
             maybeLaunchBootstrap(selected.packageName);
         });
 
-        ImageButton settingsButton = findViewById(R.id.selector_action_settings);
-        intent.putExtra("target_package", "com.innersloth.spacemafia");
-
-startActivity(intent);
+        settingsButton.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
     }
 
     @Override

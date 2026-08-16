@@ -31,6 +31,9 @@ public class BootstrapActivity extends Activity {
 
     private final AtomicBoolean fusionInitialized = new AtomicBoolean(false);
 
+    private TextView currentAction;
+private TextView logs;
+
     private TextView statusView;
     private TextView progressDetailsView;
     private ProgressBar spinnerProgress;
@@ -39,8 +42,12 @@ public class BootstrapActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bootstrap);
+        currentAction =
+findViewById(R.id.bootstrap_current_action);
+logs = findViewById(R.id.bootstrap_logs);
         statusView = findViewById(R.id.bootstrap_status);
         progressDetailsView = findViewById(R.id.bootstrap_progress_details);
         spinnerProgress = findViewById(R.id.bootstrap_progress);

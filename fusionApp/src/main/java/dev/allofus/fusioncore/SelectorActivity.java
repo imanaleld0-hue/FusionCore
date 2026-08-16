@@ -210,10 +210,15 @@ public class SelectorActivity extends Activity {
     });
 }
 
-    private void requestExternalStorageManagerAccess() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            return;
+    private void setCurrentAction(String action) {
+    runOnUiThread(() -> {
+        if (currentAction != null) {
+            currentAction.setText("Current action: " + action);
         }
+
+        addLog(action);
+    });
+}
 
         Toast.makeText(this, getString(R.string.selector_storage_permission_prompt), Toast.LENGTH_LONG).show();
         Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);

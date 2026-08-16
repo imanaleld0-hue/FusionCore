@@ -90,7 +90,9 @@ public class SelectorActivity extends Activity {
         });
 
         ImageButton settingsButton = findViewById(R.id.selector_action_settings);
-        settingsButton.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
+        intent.putExtra("target_package", "com.innersloth.spacemafia");
+
+startActivity(intent);
     }
 
     @Override

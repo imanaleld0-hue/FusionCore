@@ -159,6 +159,15 @@ logs = findViewById(R.id.bootstrap_logs);
             }
         });
     }
+    private void setCurrentAction(String action) {
+    runOnUiThread(() -> {
+        if (currentAction != null) {
+            currentAction.setText("Current action: " + action);
+        }
+
+        addLog(action);
+    });
+    }
 
     private void setDownloadStatus(long downloadedBytes, long totalBytes) {
         runOnMainThread(() -> {

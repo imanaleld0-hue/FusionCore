@@ -140,7 +140,16 @@ public class BootstrapActivity extends Activity {
             failAndFinish("Failed to launch target app's launcher activity: " + launcherClassName, e);
         }
     }
+    private void setCurrentAction(String action) {
+    runOnUiThread(() -> {
+        if (currentAction != null) {
+            currentAction.setText("Current action: " + action);
+        }
 
+        addLog(action);
+        writeLog(action);
+    });
+    }
     private void setPhaseStatus(String status) {
         runOnMainThread(() -> {
             if (statusView != null) {
@@ -160,16 +169,7 @@ public class BootstrapActivity extends Activity {
             }
         });
     }
-    private void setCurrentAction(String action) {
-        runOnUiThread(() -> {
-            if (currentAction != null) {
-                currentAction.setText("Current action: " + action);
-            }
-
-            addLog(action);
-        });
-    }
-
+    
     private void addLog(String line) {
         runOnMainThread(() -> {
             if (logs != null) {

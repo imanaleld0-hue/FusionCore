@@ -199,8 +199,8 @@ public class SelectorActivity extends Activity {
         }
         return Environment.isExternalStorageManager();
     }
- 
 
+    private void requestExternalStorageManagerAccess() {
         Toast.makeText(this, getString(R.string.selector_storage_permission_prompt), Toast.LENGTH_LONG).show();
         Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
         intent.setData(Uri.parse("package:" + getPackageName()));

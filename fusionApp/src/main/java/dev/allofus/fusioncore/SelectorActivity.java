@@ -1,4 +1,4 @@
-package dev.allofus.fusioncore
+package dev.allofus.fusioncore;
 
 
 import android.app.Activity;

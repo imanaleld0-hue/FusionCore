@@ -147,7 +147,7 @@ public class BootstrapActivity extends Activity {
         }
 
         addLog(action);
-        writeLog(action);
+        FusionLogger.write(action);
     });
     }
     private void setPhaseStatus(String status) {

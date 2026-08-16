@@ -33,7 +33,7 @@ public class BootstrapActivity extends Activity {
     private final AtomicBoolean fusionInitialized = new AtomicBoolean(false);
 
     private TextView currentAction;
-private TextView logs;
+    private TextView logs;
 
     private TextView statusView;
     private TextView progressDetailsView;
@@ -47,8 +47,8 @@ private TextView logs;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bootstrap);
         currentAction =
-findViewById(R.id.bootstrap_current_action);
-logs = findViewById(R.id.bootstrap_logs);
+                findViewById(R.id.bootstrap_current_action);
+        logs = findViewById(R.id.bootstrap_logs);
         statusView = findViewById(R.id.bootstrap_status);
         progressDetailsView = findViewById(R.id.bootstrap_progress_details);
         spinnerProgress = findViewById(R.id.bootstrap_progress);
@@ -161,13 +161,21 @@ logs = findViewById(R.id.bootstrap_logs);
         });
     }
     private void setCurrentAction(String action) {
-    runOnUiThread(() -> {
-        if (currentAction != null) {
-            currentAction.setText("Current action: " + action);
-        }
+        runOnUiThread(() -> {
+            if (currentAction != null) {
+                currentAction.setText("Current action: " + action);
+            }
 
-        addLog(action);
-    });
+            addLog(action);
+        });
+    }
+
+    private void addLog(String line) {
+        runOnMainThread(() -> {
+            if (logs != null) {
+                logs.append(line + "\n");
+            }
+        });
     }
 
     private void setDownloadStatus(long downloadedBytes, long totalBytes) {

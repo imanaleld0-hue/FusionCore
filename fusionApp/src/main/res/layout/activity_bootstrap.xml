@@ -4,16 +4,23 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
-    android:background="?android:attr/colorBackground"
-    android:padding="24dp">
+    android:padding="20dp">
 
-    <ProgressBar
-        android:id="@+id/bootstrap_progress"
-        style="?android:attr/progressBarStyleLarge"
-        android:layout_width="wrap_content"
+    <TextView
+        android:id="@+id/bootstrap_title"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:indeterminate="true" />
+        android:text="Fusion Core"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/bootstrap_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Preparing..."
+        android:textSize="16sp" />
 
     <ProgressBar
         android:id="@+id/bootstrap_download_progress"
@@ -22,40 +29,41 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:max="100"
-        android:indeterminate="false"
-        android:progress="0"
-        android:visibility="gone" />
-
-    <TextView
-        android:id="@+id/bootstrap_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center"
-        android:text="@string/bootstrap_title"
-        android:textColor="?android:attr/textColorPrimary"
-        android:textSize="20sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/bootstrap_status"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:gravity="center"
-        android:text="@string/bootstrap_status_preparing"
-        android:textColor="?android:attr/textColorSecondary"
-        android:textSize="14sp" />
+        android:progress="0" />
 
     <TextView
         android:id="@+id/bootstrap_progress_details"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:gravity="center"
-        android:textColor="?android:attr/textColorSecondary"
-        android:textSize="12sp"
-        android:visibility="gone" />
+        android:layout_marginTop="4dp"
+        android:text="0%"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/bootstrap_current_action"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Current action: preparing..."
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="10dp"
+        android:background="#101010">
+
+        <TextView
+            android:id="@+id/bootstrap_logs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:fontFamily="monospace" />
+
+    </ScrollView>
 
 </LinearLayout>
-

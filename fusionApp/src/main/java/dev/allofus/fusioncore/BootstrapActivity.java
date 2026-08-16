@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.content.pm.ActivityInfo;
 import android.widget.Toast;
 
 import java.io.File;
@@ -42,7 +43,7 @@ private TextView logs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bootstrap);
         currentAction =
@@ -115,7 +116,7 @@ logs = findViewById(R.id.bootstrap_logs);
         } catch (Exception e) {
             Log.e(TAG, "Failed to install base hooks", e);
         }
-
+       
         try {
             setPhaseStatus(getString(R.string.bootstrap_status_launching));
             initializeFusion(launcherClassName, targetPackage);

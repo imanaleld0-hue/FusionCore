@@ -1,4 +1,5 @@
-package dev.allofus.fusioncore;
+package dev.allofus.fusioncore
+
 
 import android.app.Activity;
 import android.content.Intent;
@@ -24,6 +25,11 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,11 +41,42 @@ public class SelectorActivity extends Activity {
 
     private String pendingLaunchPackage;
     private ImageButton settingsButton;
+    private File logFile;
 
+private void initLogFile() {
+    File logDir = new File(
+            Environment.getExternalStorageDirectory(),
+            "FusionCore/logs"
+    );
+
+    if (!logDir.exists()) {
+        logDir.mkdirs();
+    }
+
+    logFile = new File(logDir, "fusioncore.log");
+}
+
+private void writeLog(String message) {
+    if (logFile == null) {
+        initLogFile();
+    }
+
+    String time = new SimpleDateFormat(
+            "HH:mm:ss.SSS",
+            Locale.getDefault()
+    ).format(new Date());
+
+    try (FileWriter writer = new FileWriter(logFile, true)) {
+        writer.write("[" + time + "] " + message + "\n");
+    } catch (IOException e) {
+        Log.e("FusionCore", "Failed to write log", e);
+    }
+}
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_selector);
+initLogFile();
+writeLog("FusionCore started");       setContentView(R.layout.activity_selector);
 
         View root = findViewById(R.id.selector_root);
         int basePadding = Math.round(getResources().getDisplayMetrics().density * 16f);

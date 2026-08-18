@@ -31,7 +31,7 @@ public class BootstrapActivity extends Activity {
     private static final String GLOBAL_METADATA_FILE = "global-metadata.dat";
 
     private final AtomicBoolean fusionInitialized = new AtomicBoolean(false);
-
+    private final AtomicBoolean bootstrapStarted = new AtomicBoolean(false);
     private TextView currentAction;
     private TextView logs;
 
@@ -62,7 +62,17 @@ public class BootstrapActivity extends Activity {
         }
 
         // Let the loading screen render first, then perform initialization work.
-        statusView.post(() -> new Thread(() -> runBootstrapFlow(targetPackage), "bootstrap-flow").start());
+        if (!bootstrapStarted.compareAndSet(false, true)) {
+    Log.w(TAG, "Bootstrap flow already started, ignoring duplicate start");
+    return;
+}
+
+statusView.post(() ->
+        new Thread(
+                () -> runBootstrapFlow(targetPackage),
+                "bootstrap-flow"
+        ).start()
+);
     }
 
     private void runBootstrapFlow(String targetPackage) {

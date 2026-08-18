@@ -74,7 +74,7 @@ private void writeLog(String message) {
 }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+     LogcatCollector.start(this);   super.onCreate(savedInstanceState);
 initLogFile();
 writeLog("FusionCore started");       setContentView(R.layout.activity_selector);
 

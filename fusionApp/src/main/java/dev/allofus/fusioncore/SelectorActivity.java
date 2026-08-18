@@ -74,8 +74,10 @@ private void writeLog(String message) {
 }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-     LogcatCollector.start(this);   super.onCreate(savedInstanceState);
+super.onCreate(savedInstanceState);
+
 initLogFile();
+LogcatCollector.start(this);
 writeLog("FusionCore started");       setContentView(R.layout.activity_selector);
 
         View root = findViewById(R.id.selector_root);

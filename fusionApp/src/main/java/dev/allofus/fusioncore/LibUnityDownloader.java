@@ -88,7 +88,6 @@ private static boolean downloadAndCache(
         File cacheMetaFile = new File(outputDir, LIBUNITY_CACHE_META_FILE);
         String trimmedVersion = version.trim();
         String downloadVersion = normalizeVersionForDownload(trimmedVersion);
-        String cacheKey = downloadVersion + "|" + currentAbi;
         String currentAbi = normalizeAbiForDownload(targetGameAbi);
 
         if (currentAbi == null) {
@@ -96,7 +95,7 @@ private static boolean downloadAndCache(
         notifyDownloadFinished(progressListener, false, false);
         return false;
        }
-    
+        String cacheKey = downloadVersion + "|" + currentAbi;
         if (!trimmedVersion.equals(downloadVersion)) {
             Log.i(TAG, "Normalized Unity version for download URL: " + trimmedVersion + " -> " + downloadVersion);
         }

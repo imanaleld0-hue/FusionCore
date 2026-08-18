@@ -30,26 +30,6 @@ public final class LibUnityDownloader {
         void onDownloadFinished(boolean success, boolean usedCache);
     }
 
-    public static boolean downloadAndCacheSafely(File outputDir,
-                                                 String version,
-                                                 String targetGameAbi,
-                                                 DownloadProgressListener progressListener) {
-        FutureTask<Boolean> task = new FutureTask<>(() -> downloadAndCache(outputDir, version, targetGameAbi, progressListener));
-        Thread worker = new Thread(task, "FusionCore-LibUnityDownload");
-        worker.start();
-
-        try {
-            return task.get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            Log.e(TAG, "Libunity download thread was interrupted", e);
-            return false;
-        } catch (ExecutionException e) {
-            Log.e(TAG, "Libunity download failed", e.getCause() != null ? e.getCause() : e);
-            return false;
-        }
-    }
-
     public static boolean downloadAndCacheSafely(
         File outputDir,
         String version,
@@ -88,7 +68,8 @@ public final class LibUnityDownloader {
             return false;
         }
     }
-}
+    }
+
         if (!outputDir.exists() && !outputDir.mkdirs()) {
             Log.e(TAG, "Failed to create output directory: " + outputDir.getAbsolutePath());
             notifyDownloadFinished(progressListener, false, false);

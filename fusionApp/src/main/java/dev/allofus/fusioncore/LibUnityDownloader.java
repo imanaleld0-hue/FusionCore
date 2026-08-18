@@ -89,7 +89,8 @@ private static boolean downloadAndCache(
         String trimmedVersion = version.trim();
         String downloadVersion = normalizeVersionForDownload(trimmedVersion);
         String cacheKey = downloadVersion + "|" + currentAbi;
-
+        String currentAbi = normalizeAbiForDownload(targetGameAbi);
+    
         if (!trimmedVersion.equals(downloadVersion)) {
             Log.i(TAG, "Normalized Unity version for download URL: " + trimmedVersion + " -> " + downloadVersion);
         }

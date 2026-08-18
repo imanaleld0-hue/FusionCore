@@ -90,6 +90,12 @@ private static boolean downloadAndCache(
         String downloadVersion = normalizeVersionForDownload(trimmedVersion);
         String cacheKey = downloadVersion + "|" + currentAbi;
         String currentAbi = normalizeAbiForDownload(targetGameAbi);
+
+        if (currentAbi == null) {
+        Log.e(TAG, "Unsupported target game ABI: " + targetGameAbi);
+        notifyDownloadFinished(progressListener, false, false);
+        return false;
+       }
     
         if (!trimmedVersion.equals(downloadVersion)) {
             Log.i(TAG, "Normalized Unity version for download URL: " + trimmedVersion + " -> " + downloadVersion);

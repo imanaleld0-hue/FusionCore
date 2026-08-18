@@ -33,15 +33,13 @@ public class UnityPlayerHooks {
         Class<?> unityPlayerClass = null;
         for (String className : UnityPlayerClassNames) {
             try {
-                unityPlayerClass = classLoader.loadClass(className);
-                for (Constructor<?> ctor : unityPlayerClass.getDeclaredConstructors()) {
-                    if (ctor.getParameterTypes().length >= 1 &&
-                            Context.class.isAssignableFrom(ctor.getParameterTypes()[0])) {
-                        constructors.add(ctor);
-                    }
-                }
-            } catch (ClassNotFoundException e) {
-                // Try next class name
+              Class<?> c = classLoader.loadClass("com.unity3d.player.UnityPlayerForGameActivity");
+              Log.i(TAG, "========== UNITY CLASS FOUND ==========");
+              Log.i(TAG, "Class: " + c.getName());
+              Log.i(TAG, "Loader: " + c.getClassLoader());
+
+} catch (Throwable e) {
+    Log.e(TAG, "========== UNITY CLASS NOT FOUND ==========", e);
             }
         }
 

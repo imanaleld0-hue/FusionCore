@@ -34,7 +34,15 @@ public class CustomContextWrapper extends ContextWrapper {
 //    public ApplicationInfo getApplicationInfo() {
 //        return super.getApplicationInfo();
 //    }
+   @Override
+    public android.content.res.Resources getResources() {
+    return super.getResources();
+}
 
+    @Override
+    public android.content.res.AssetManager getAssets() {
+    return super.getAssets();
+}
     @Override
     public SharedPreferences getSharedPreferences(String name, int mode) {
         return this.fusionContext.getSharedPreferences(name, mode);
@@ -95,7 +103,7 @@ public class CustomContextWrapper extends ContextWrapper {
 
     @Override
     public Context getApplicationContext() {
-        return fusionContext.getApplicationContext();
+        return this;
     }
 
     @Override

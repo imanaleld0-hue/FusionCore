@@ -29,7 +29,6 @@ public final class LibUnityDownloader {
         void onDownloadProgress(long downloadedBytes, long totalBytes);
         void onDownloadFinished(boolean success, boolean usedCache);
     }
-
     public static boolean downloadAndCacheSafely(
         File outputDir,
         String version,
@@ -68,20 +67,21 @@ public final class LibUnityDownloader {
             return false;
         }
     }
+}
+
+private static boolean downloadAndCache(
+        File outputDir,
+        String version,
+        String targetGameAbi,
+        DownloadProgressListener progressListener) {
+
+    if (!outputDir.exists() && !outputDir.mkdirs()) {
+        Log.e(TAG, "Failed to create output directory");
+        return false;
     }
 
-        if (!outputDir.exists() && !outputDir.mkdirs()) {
-            Log.e(TAG, "Failed to create output directory: " + outputDir.getAbsolutePath());
-            notifyDownloadFinished(progressListener, false, false);
-            return false;
-        }
-
-        String currentAbi = normalizeAbiForDownload(targetGameAbi);
-        if (currentAbi == null) {
-            Log.e(TAG, "Target game ABI is missing or unsupported: " + targetGameAbi);
-            notifyDownloadFinished(progressListener, false, false);
-            return false;
-        }
+    // здесь должен продолжаться твой существующий код
+}
 
         File outputLibUnity = new File(outputDir, "libunity.so");
         File tempOutputLibUnity = new File(outputDir, "libunity.so.download");

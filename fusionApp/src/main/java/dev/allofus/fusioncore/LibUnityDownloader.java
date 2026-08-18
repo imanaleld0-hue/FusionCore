@@ -78,10 +78,9 @@ private static boolean downloadAndCache(
     if (!outputDir.exists() && !outputDir.mkdirs()) {
         Log.e(TAG, "Failed to create output directory");
         return false;
-    }
+}
 
     // здесь должен продолжаться твой существующий код
-}
 
         File outputLibUnity = new File(outputDir, "libunity.so");
         File tempOutputLibUnity = new File(outputDir, "libunity.so.download");

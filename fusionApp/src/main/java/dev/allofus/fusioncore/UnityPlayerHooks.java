@@ -33,13 +33,29 @@ public class UnityPlayerHooks {
         Class<?> unityPlayerClass = null;
         for (String className : UnityPlayerClassNames) {
             try {
-              Class<?> c = classLoader.loadClass("com.unity3d.player.UnityPlayerForGameActivity");
-              Log.i(TAG, "========== UNITY CLASS FOUND ==========");
-              Log.i(TAG, "Class: " + c.getName());
-              Log.i(TAG, "Loader: " + c.getClassLoader());
+                // Try to load the candidate UnityPlayer class name from the game's classloader.
+                Class<?> c = classLoader.loadClass(className);
+                Log.i(TAG, "========== UNITY CLASS FOUND ==========");
+                Log.i(TAG, "Class: " + c.getName());
+                Log.i(TAG, "Loader: " + c.getClassLoader());
 
-} catch (Throwable e) {
-    Log.e(TAG, "========== UNITY CLASS NOT FOUND ==========", e);
+                // remember the class and collect constructors that take a Context/Activity as the first parameter
+                unityPlayerClass = c;
+                for (Constructor<?> cons : c.getDeclaredConstructors()) {
+                    Class<?>[] params = cons.getParameterTypes();
+                    if (params.length > 0 && (Context.class.isAssignableFrom(params[0]) || Activity.class.isAssignableFrom(params[0]))) {
+                        cons.setAccessible(true);
+                        constructors.add(cons);
+                        Log.d(TAG, "Found candidate constructor: " + cons);
+                    }
+                }
+
+                // if we found any usable constructors for this class, stop searching further names
+                if (!constructors.isEmpty()) {
+                    break;
+                }
+            } catch (Throwable e) {
+                Log.e(TAG, "========== UNITY CLASS NOT FOUND ==========", e);
             }
         }
 

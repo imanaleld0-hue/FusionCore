@@ -37,11 +37,7 @@
       </intent-filter>
     </activity>
     
-    <activity
-    android:name=".StubActivity"
-    android:screenOrientation="landscape"
-    android:configChanges="orientation|screenSize|keyboardHidden"
-    android:exported="false" />
+  
     
     <activity
         android:name="dev.allofus.fusioncore.BootstrapActivity"
@@ -58,6 +54,7 @@
     <activity
         android:name="dev.allofus.fusioncore.StubActivity"
         android:theme="@style/UnityThemeSelector"
+        android:screenOrientation="landscape"
         android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density"
         android:hardwareAccelerated="true"
         android:launchMode="singleTask"

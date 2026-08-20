@@ -1,4 +1,4 @@
-package dev.allofus.fusioncore.bootstrap;
+package dev.allofus.fusioncore;
 
 import android.os.Handler;
 import android.os.Looper;

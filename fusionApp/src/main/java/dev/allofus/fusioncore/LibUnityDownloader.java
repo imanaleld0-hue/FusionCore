@@ -262,13 +262,72 @@ private static boolean downloadAndCache(
             }
         }
     }
+   LibUnityDownloader.downloadAndCacheSafely(
+        outputDir,
+        unityVersion,
+        targetAbi,
+        new LibUnityDownloader.DownloadProgressListener() {
 
+            @Override
+            public void onDownloadStarted(
+                    String url,
+                    long totalBytes
+            ) {
+
+                manager.log(
+                        "Downloading libunity: " + url
+                );
+
+                manager.publish(
+                        BootstrapStage.DOWNLOADING,
+                        0,
+                        totalBytes,
+                        "Downloading libunity",
+                        totalBytes <= 0,
+                        null
+                );
+            }
+
+            @Override
+            public void onDownloadProgress(
+                    long downloadedBytes,
+                    long totalBytes
+            ) {
+
+                manager.publish(
+                        BootstrapStage.DOWNLOADING,
+                        downloadedBytes,
+                        totalBytes,
+                        "Downloading libunity",
+                        totalBytes <= 0,
+                        null
+                );
+            }
+
+            @Override
+            public void onDownloadFinished(
+                    boolean success,
+                    boolean usedCache
+            ) {
+
+                if (usedCache) {
+                    manager.log(
+                            "Using cached libunity"
+                    );
+                } else if (success) {
+                    manager.log(
+                            "libunity downloaded successfully"
+                    );
+                }
+            }
+        }
+);
     private static void notifyDownloadStarted(DownloadProgressListener listener, String url, long totalBytes) {
         if (listener != null) {
             listener.onDownloadStarted(url, totalBytes);
         }
     }
-
+   
     private static void notifyDownloadProgress(DownloadProgressListener listener, long downloadedBytes, long totalBytes) {
         if (listener != null) {
             listener.onDownloadProgress(downloadedBytes, totalBytes);

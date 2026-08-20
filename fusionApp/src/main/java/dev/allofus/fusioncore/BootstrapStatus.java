@@ -1,4 +1,4 @@
-package dev.allofus.fusioncore.bootstrap;
+package dev.allofus.fusioncore;
 
 import java.util.ArrayList;
 import java.util.Collections;

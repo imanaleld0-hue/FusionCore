@@ -87,7 +87,7 @@ public final class LibUnityDownloader {
         File tempOutputLibUnity = new File(outputDir, "libunity.so.download");
         File tempZipFile = new File(outputDir, "libunity.so.zip.download");
         File cacheMetaFile = new File(outputDir, LIBUNITY_CACHE_META_FILE);
-        String trimmedVersion = version.trim();
+        String trimmedVersion = version != null ? version.trim() : "";
         String downloadVersion = normalizeVersionForDownload(trimmedVersion);
         String currentAbi = normalizeAbiForDownload(targetGameAbi);
 
@@ -96,7 +96,13 @@ public final class LibUnityDownloader {
             notifyDownloadFinished(progressListener, false, false);
             return false;
         }
-
+        
+        if (trimmedVersion.isEmpty()) {
+        Log.e(TAG, "Unity version is null or empty");
+        notifyDownloadFinished(progressListener, false, false);
+        return false;
+        }
+        
         if (!trimmedVersion.equals(downloadVersion)) {
             Log.i(TAG, "Normalized Unity version for download URL: " + trimmedVersion + " -> " + downloadVersion);
         }
@@ -385,50 +391,65 @@ public final class LibUnityDownloader {
     }
 
     private static String detectUnityVersion(File libUnity) {
-        byte[] buffer = new byte[1024 * 1024];
-        try (FileInputStream in = new FileInputStream(libUnity)) {
-            StringBuilder text = new StringBuilder();
+    byte[] buffer = new byte[1024 * 1024];
 
-            int read;
+    try (FileInputStream in = new FileInputStream(libUnity)) {
 
-            while ((read = in.read(buffer)) != -1) {
-                text.append(
-                        new String(
-                                buffer,
-                                0,
-                                read,
-                                StandardCharsets.ISO_8859_1
-                        )
+        StringBuilder text = new StringBuilder();
+
+        int read;
+
+        while ((read = in.read(buffer)) != -1) {
+
+            text.append(
+                    new String(
+                            buffer,
+                            0,
+                            read,
+                            StandardCharsets.ISO_8859_1
+                    )
+            );
+
+            Matcher matcher =
+                    UNITY_FULL_VERSION_PATTERN.matcher(text);
+
+            if (matcher.find()) {
+
+                String version =
+                        matcher.group();
+
+                Log.i(
+                        TAG,
+                        "Detected Unity version from libunity.so: "
+                                + version
                 );
 
-                Matcher matcher = UNITY_FULL_VERSION_PATTERN.matcher(text);
-
-                if (matcher.find()) {
-                    String version = matcher.group();
-
-                    Log.i(TAG, "Detected Unity version from libunity.so: " + version);
-
-                    return version;
-                }
-
-                if (text.length() > 4 * 1024 * 1024) {
-                    text.delete(
-                            0,
-                            text.length() - 1024 * 1024
-                    );
-                }
+                return version;
             }
 
-        } catch (IOException e) {
-            Log.e(
-                    TAG,
-                    "Failed to detect Unity version from libunity.so",
-                    e
-            );
+            // Не держать весь огромный .so в памяти.
+            if (text.length() > 1024 * 1024) {
+                text.delete(
+                        0,
+                        text.length() - 65536
+                );
+            }
         }
 
-        Log.e(TAG, "Unity version was not found in libunity.so");
+    } catch (IOException e) {
 
-        return null;
+        Log.e(
+                TAG,
+                "Failed to read libunity for version detection",
+                e
+        );
+    }
+
+    Log.e(
+            TAG,
+            "Unity version was not found in libunity.so"
+    );
+
+    return null;
     }
 }

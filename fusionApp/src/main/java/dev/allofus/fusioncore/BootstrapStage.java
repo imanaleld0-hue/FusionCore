@@ -1,4 +1,4 @@
-package dev.allofus.fusioncore.bootstrap;
+package dev.allofus.fusioncore;
 
 public enum BootstrapStage {
 

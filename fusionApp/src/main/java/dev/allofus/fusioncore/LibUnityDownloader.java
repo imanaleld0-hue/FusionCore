@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream; 
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -23,7 +23,7 @@ public final class LibUnityDownloader {
     private static final String TAG = "FusionCore";
     private static final String LIBUNITY_DOWNLOAD_URL = "https://unity.bepinex.dev/android/";
     private static final String LIBUNITY_CACHE_META_FILE = "libunity.cache.properties";
-    private static final Pattern UNITY_BASE_VERSION_PATTERN = Pattern.compile("^(\\d+\\.\\d+\\.\\d+)[fbp]\\d+$");
+    private static final Pattern UNITY_BASE_VERSION_PATTERN = Pattern.compile("^(\\d+\\.\\d+\\.\\d+)");
     private static final Pattern UNITY_FULL_VERSION_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+(?:[abcfp]\\d+|rc\\d+)?");
 
     public interface DownloadProgressListener {
@@ -31,58 +31,57 @@ public final class LibUnityDownloader {
         void onDownloadProgress(long downloadedBytes, long totalBytes);
         void onDownloadFinished(boolean success, boolean usedCache);
     }
+
     public static boolean downloadAndCacheSafely(
-        File outputDir,
-        String version,
-        String targetGameAbi,
-        DownloadProgressListener progressListener) {
+            File outputDir,
+            String version,
+            String targetGameAbi,
+            DownloadProgressListener progressListener) {
 
-    synchronized (LibUnityDownloader.class) {
-        FutureTask<Boolean> task = new FutureTask<>(
-                () -> downloadAndCache(
-                        outputDir,
-                        version,
-                        targetGameAbi,
-                        progressListener
-                )
-        );
-
-        Thread worker = new Thread(
-                task,
-                "FusionCore-LibUnityDownload"
-        );
-
-        worker.start();
-
-        try {
-            return task.get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            Log.e(TAG, "Libunity download thread was interrupted", e);
-            return false;
-        } catch (ExecutionException e) {
-            Log.e(
-                    TAG,
-                    "Libunity download failed",
-                    e.getCause() != null ? e.getCause() : e
+        synchronized (LibUnityDownloader.class) {
+            FutureTask<Boolean> task = new FutureTask<>(
+                    () -> downloadAndCache(
+                            outputDir,
+                            version,
+                            targetGameAbi,
+                            progressListener
+                    )
             );
-            return false;
+
+            Thread worker = new Thread(
+                    task,
+                    "FusionCore-LibUnityDownload"
+            );
+
+            worker.start();
+
+            try {
+                return task.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                Log.e(TAG, "Libunity download thread was interrupted", e);
+                return false;
+            } catch (ExecutionException e) {
+                Log.e(
+                        TAG,
+                        "Libunity download failed",
+                        e.getCause() != null ? e.getCause() : e
+                );
+                return false;
+            }
         }
     }
-}
 
-private static boolean downloadAndCache(
-        File outputDir,
-        String version,
-        String targetGameAbi,
-        DownloadProgressListener progressListener) {
+    private static boolean downloadAndCache(
+            File outputDir,
+            String version,
+            String targetGameAbi,
+            DownloadProgressListener progressListener) {
 
-    if (!outputDir.exists() && !outputDir.mkdirs()) {
-        Log.e(TAG, "Failed to create output directory");
-        return false;
-}
-
-    // здесь должен продолжаться твой существующий код
+        if (!outputDir.exists() && !outputDir.mkdirs()) {
+            Log.e(TAG, "Failed to create output directory");
+            return false;
+        }
 
         File outputLibUnity = new File(outputDir, "libunity.so");
         File tempOutputLibUnity = new File(outputDir, "libunity.so.download");
@@ -93,19 +92,18 @@ private static boolean downloadAndCache(
         String currentAbi = normalizeAbiForDownload(targetGameAbi);
 
         if (currentAbi == null) {
-        Log.e(TAG, "Unsupported target game ABI: " + targetGameAbi);
-        notifyDownloadFinished(progressListener, false, false);
-        return false;
-       }
-        // Note: cache key now must include the binary version. We can't compute it until we inspect the binary,
-        // so isCachedLibUnityValid will validate the existing cache metadata includes the binary version and matches trimmedVersion.
+            Log.e(TAG, "Unsupported target game ABI: " + targetGameAbi);
+            notifyDownloadFinished(progressListener, false, false);
+            return false;
+        }
+
         if (!trimmedVersion.equals(downloadVersion)) {
             Log.i(TAG, "Normalized Unity version for download URL: " + trimmedVersion + " -> " + downloadVersion);
         }
 
         if (isCachedLibUnityValid(outputLibUnity, cacheMetaFile, trimmedVersion, currentAbi)) {
             Properties meta = readCacheMeta(cacheMetaFile);
-            String actualKey = meta.getProperty("cacheKey", "");
+            String actualKey = meta != null ? meta.getProperty("cacheKey", "") : "";
             Log.i(TAG, "Using cached libunity for " + actualKey + " at " + outputLibUnity.getAbsolutePath());
             notifyDownloadFinished(progressListener, true, true);
             return true;
@@ -262,72 +260,13 @@ private static boolean downloadAndCache(
             }
         }
     }
-   LibUnityDownloader.downloadAndCacheSafely(
-        outputDir,
-        unityVersion,
-        targetAbi,
-        new LibUnityDownloader.DownloadProgressListener() {
 
-            @Override
-            public void onDownloadStarted(
-                    String url,
-                    long totalBytes
-            ) {
-
-                manager.log(
-                        "Downloading libunity: " + url
-                );
-
-                manager.publish(
-                        BootstrapStage.DOWNLOADING,
-                        0,
-                        totalBytes,
-                        "Downloading libunity",
-                        totalBytes <= 0,
-                        null
-                );
-            }
-
-            @Override
-            public void onDownloadProgress(
-                    long downloadedBytes,
-                    long totalBytes
-            ) {
-
-                manager.publish(
-                        BootstrapStage.DOWNLOADING,
-                        downloadedBytes,
-                        totalBytes,
-                        "Downloading libunity",
-                        totalBytes <= 0,
-                        null
-                );
-            }
-
-            @Override
-            public void onDownloadFinished(
-                    boolean success,
-                    boolean usedCache
-            ) {
-
-                if (usedCache) {
-                    manager.log(
-                            "Using cached libunity"
-                    );
-                } else if (success) {
-                    manager.log(
-                            "libunity downloaded successfully"
-                    );
-                }
-            }
-        }
-);
     private static void notifyDownloadStarted(DownloadProgressListener listener, String url, long totalBytes) {
         if (listener != null) {
             listener.onDownloadStarted(url, totalBytes);
         }
     }
-   
+
     private static void notifyDownloadProgress(DownloadProgressListener listener, long downloadedBytes, long totalBytes) {
         if (listener != null) {
             listener.onDownloadProgress(downloadedBytes, totalBytes);
@@ -440,63 +379,56 @@ private static boolean downloadAndCache(
             case "armeabi":
             case "armv7":
                 return "armeabi-v7a";
-/*            case "x86":
-                return "x86";
-            case "x86_64":
-                return "x86_64"; */
         }
 
         return null;
     }
 
-   private static String detectUnityVersion(File libUnity) {
-    byte[] buffer = new byte[1024 * 1024];
-    Pattern pattern = Pattern.compile(
-        "2022\\.\\d+\\.\\d+(?:[abcfp]\\d+|rc\\d+)?"
-);
-    try (FileInputStream in = new FileInputStream(libUnity)) {
-        StringBuilder text = new StringBuilder();
+    private static String detectUnityVersion(File libUnity) {
+        byte[] buffer = new byte[1024 * 1024];
+        try (FileInputStream in = new FileInputStream(libUnity)) {
+            StringBuilder text = new StringBuilder();
 
-        int read;
+            int read;
 
-        while ((read = in.read(buffer)) != -1) {
-            text.append(
-                    new String(
-                            buffer,
-                            0,
-                            read,
-                            StandardCharsets.ISO_8859_1
-                    )
-            );
-
-            Matcher matcher = UNITY_FULL_VERSION_PATTERN.matcher(text);
-
-            if (matcher.find()) {
-                String version = matcher.group();
-
-                Log.i(TAG, "Detected Unity version from libunity.so: " + version);
-
-                return version;
-            }
-
-            if (text.length() > 4 * 1024 * 1024) {
-                text.delete(
-                        0,
-                        text.length() - 1024 * 1024
+            while ((read = in.read(buffer)) != -1) {
+                text.append(
+                        new String(
+                                buffer,
+                                0,
+                                read,
+                                StandardCharsets.ISO_8859_1
+                        )
                 );
+
+                Matcher matcher = UNITY_FULL_VERSION_PATTERN.matcher(text);
+
+                if (matcher.find()) {
+                    String version = matcher.group();
+
+                    Log.i(TAG, "Detected Unity version from libunity.so: " + version);
+
+                    return version;
+                }
+
+                if (text.length() > 4 * 1024 * 1024) {
+                    text.delete(
+                            0,
+                            text.length() - 1024 * 1024
+                    );
+                }
             }
+
+        } catch (IOException e) {
+            Log.e(
+                    TAG,
+                    "Failed to detect Unity version from libunity.so",
+                    e
+            );
         }
 
-    } catch (IOException e) {
-        Log.e(
-                TAG,
-                "Failed to detect Unity version from libunity.so",
-                e
-        );
+        Log.e(TAG, "Unity version was not found in libunity.so");
+
+        return null;
     }
-
-    Log.e(TAG, "Unity version was not found in libunity.so");
-
-    return null;
-   }
 }

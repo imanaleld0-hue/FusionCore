@@ -38,6 +38,12 @@
     </activity>
     
     <activity
+    android:name=".StubActivity"
+    android:screenOrientation="landscape"
+    android:configChanges="orientation|screenSize|keyboardHidden"
+    android:exported="false" />
+    
+    <activity
         android:name="dev.allofus.fusioncore.BootstrapActivity"
         android:theme="@style/UnityThemeSelector"
         android:launchMode="singleTask"

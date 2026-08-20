@@ -74,7 +74,149 @@ statusView.post(() ->
         ).start()
 );
     }
+    private void startBootstrap() {
 
+    BootstrapManager manager =
+            BootstrapManager.getInstance();
+
+    manager.start(() -> {
+
+        runBootstrapPipeline(manager);
+
+    });
+   }
+    private void runBootstrapPipeline(
+        BootstrapManager manager
+) {
+
+    manager.publish(
+            BootstrapStage.CHECKING_GAME,
+            0,
+            -1,
+            "Checking game",
+            true,
+            null
+    );
+
+    manager.log("Checking selected game...");
+
+    // ТВОЙ СУЩЕСТВУЮЩИЙ CODE
+    // проверки игры
+
+    manager.publish(
+            BootstrapStage.COPYING_DATA,
+            0,
+            -1,
+            "Copying Unity Data",
+            true,
+            null
+    );
+
+    manager.log("Copying Unity Data...");
+
+    // ТВОЙ СУЩЕСТВУЮЩИЙ CODE
+    // copy Unity Data
+
+    manager.publish(
+            BootstrapStage.DETECTING_UNITY,
+            0,
+            -1,
+            "Detecting Unity version",
+            true,
+            null
+    );
+
+    manager.log("Detecting Unity version...");
+
+    // определение версии
+
+    manager.publish(
+            BootstrapStage.DOWNLOADING,
+            0,
+            -1,
+            "Downloading runtime",
+            true,
+            null
+    );
+
+    manager.log("Downloading libunity...");
+
+    // download
+
+    manager.publish(
+            BootstrapStage.PREPARING_RUNTIME,
+            0,
+            -1,
+            "Preparing runtime",
+            true,
+            null
+    );
+
+    // подготовка runtime
+
+    manager.publish(
+            BootstrapStage.INITIALIZING_IL2CPP,
+            0,
+            -1,
+            "Initializing IL2CPP",
+            true,
+            null
+    );
+
+    manager.log("Initializing IL2CPP...");
+
+    // IL2CPP
+
+    manager.publish(
+            BootstrapStage.GENERATING_INTEROP,
+            0,
+            -1,
+            "Generating IL2CPP interop",
+            true,
+            null
+    );
+
+    manager.log("Generating interop...");
+
+    // Fusion.NET
+
+    manager.publish(
+            BootstrapStage.LOADING_ASSEMBLIES,
+            0,
+            -1,
+            "Loading assemblies",
+            true,
+            null
+    );
+
+    manager.log("Loading assemblies...");
+
+    // assemblies
+
+    manager.publish(
+            BootstrapStage.STARTING_GAME,
+            0,
+            -1,
+            "Starting game",
+            true,
+            null
+    );
+
+    manager.log("Starting Unity...");
+
+    // запуск игры
+
+    manager.publish(
+            BootstrapStage.READY,
+            1,
+            1,
+            "Ready",
+            false,
+            null
+    );
+
+    manager.log("Game is ready.");
+    }
     private void runBootstrapFlow(String targetPackage) {
         Intent launchIntent = getPackageManager().getLaunchIntentForPackage(targetPackage);
         if (launchIntent == null) {

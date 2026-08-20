@@ -17,7 +17,7 @@
   
   <!-- Query permissions for supported games (MUST be outside <application>) -->
   <queries>
-    <package android:name="com.innersloth.spacemafia" /
+    <package android:name="com.innersloth.spacemafia" />
   </queries>
   
   <application android:label="@string/app_name" android:icon="@mipmap/app_icon" android:enableOnBackInvokedCallback="true" android:extractNativeLibs="true">

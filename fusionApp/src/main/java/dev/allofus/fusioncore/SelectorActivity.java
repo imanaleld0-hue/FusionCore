@@ -43,42 +43,15 @@ public class SelectorActivity extends Activity {
     private ImageButton settingsButton;
     private File logFile;
 
-private void initLogFile() {
-    File logDir = new File(
-            Environment.getExternalStorageDirectory(),
-            "FusionCore/logs"
-    );
 
-    if (!logDir.exists()) {
-        logDir.mkdirs();
-    }
 
-    logFile = new File(logDir, "fusioncore.log");
-}
-
-private void writeLog(String message) {
-    if (logFile == null) {
-        initLogFile();
-    }
-
-    String time = new SimpleDateFormat(
-            "HH:mm:ss.SSS",
-            Locale.getDefault()
-    ).format(new Date());
-
-    try (FileWriter writer = new FileWriter(logFile, true)) {
-        writer.write("[" + time + "] " + message + "\n");
-    } catch (IOException e) {
-        Log.e("FusionCore", "Failed to write log", e);
-    }
-}
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    
 super.onCreate(savedInstanceState);
 
-initLogFile();
-LogcatCollector.start(this);
-writeLog("FusionCore started");       setContentView(R.layout.activity_selector);
+LogcatCollector.start(this);  
+setContentView(R.layout.activity_selector);
 
         View root = findViewById(R.id.selector_root);
         int basePadding = Math.round(getResources().getDisplayMetrics().density * 16f);

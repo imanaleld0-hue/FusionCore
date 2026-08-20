@@ -83,12 +83,12 @@ public class BootstrapActivity extends Activity {
     return;
 }
 
-statusView.post(() ->
-        new Thread(
-                () -> runBootstrapFlow(targetPackage),
-                "bootstrap-flow"
-        ).start()
-);
+        
+new Thread(
+        () -> runBootstrapFlow(targetPackage),
+        "bootstrap-flow"
+).start();
+        
     }
     private void startBootstrap() {
 
@@ -486,7 +486,7 @@ statusView.post(() ->
             runOnUiThread(runnable);
         }
     }
-    private void setProgress(int percent) {
+    private void updateBootstrapPercent(int percent) {
     runOnMainThread(() -> {
         int safePercent = Math.max(0, Math.min(100, percent));
 
@@ -494,7 +494,8 @@ statusView.post(() ->
             percentView.setText(safePercent + "%");
         }
 
-        if (downloadProgress != null && !downloadProgress.isIndeterminate()) {
+        if (downloadProgress != null
+                && !downloadProgress.isIndeterminate()) {
             downloadProgress.setProgress(safePercent);
         }
     });

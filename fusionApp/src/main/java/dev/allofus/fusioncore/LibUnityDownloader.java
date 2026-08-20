@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -22,7 +23,8 @@ public final class LibUnityDownloader {
     private static final String TAG = "FusionCore";
     private static final String LIBUNITY_DOWNLOAD_URL = "https://unity.bepinex.dev/android/";
     private static final String LIBUNITY_CACHE_META_FILE = "libunity.cache.properties";
-    private static final Pattern UNITY_BASE_VERSION_PATTERN = Pattern.compile("^(\\d+\\.\\d+\\.\\d+)");
+    private static final Pattern UNITY_BASE_VERSION_PATTERN = Pattern.compile("^(\\d+\\.\\d+\\.\\d+");
+    private static final Pattern UNITY_FULL_VERSION_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+(?:[abcfp]\\\\d+|rc\\\\d+)?");
 
     public interface DownloadProgressListener {
         void onDownloadStarted(String url, long totalBytes);
@@ -95,13 +97,16 @@ private static boolean downloadAndCache(
         notifyDownloadFinished(progressListener, false, false);
         return false;
        }
-        String cacheKey = downloadVersion + "|" + currentAbi;
+        // Note: cache key now must include the binary version. We can't compute it until we inspect the binary,
+        // so isCachedLibUnityValid will validate the existing cache metadata includes the binary version and matches trimmedVersion.
         if (!trimmedVersion.equals(downloadVersion)) {
             Log.i(TAG, "Normalized Unity version for download URL: " + trimmedVersion + " -> " + downloadVersion);
         }
 
-        if (isCachedLibUnityValid(outputLibUnity, cacheMetaFile, cacheKey)) {
-            Log.i(TAG, "Using cached libunity for " + cacheKey + " at " + outputLibUnity.getAbsolutePath());
+        if (isCachedLibUnityValid(outputLibUnity, cacheMetaFile, trimmedVersion, currentAbi)) {
+            Properties meta = readCacheMeta(cacheMetaFile);
+            String actualKey = meta.getProperty("cacheKey", "");
+            Log.i(TAG, "Using cached libunity for " + actualKey + " at " + outputLibUnity.getAbsolutePath());
             notifyDownloadFinished(progressListener, true, true);
             return true;
         }
@@ -184,6 +189,42 @@ private static boolean downloadAndCache(
                 return false;
             }
 
+            // Inspect downloaded binary for embedded Unity version
+            String binaryVersion = detectUnityVersion(tempOutputLibUnity);
+            Log.i(TAG, "Target Unity version: " + trimmedVersion + ", downloaded libunity version: " + binaryVersion);
+
+            if (binaryVersion == null) {
+                Log.e(TAG, "Could not determine libunity.so Unity version");
+                if (tempOutputLibUnity.exists() && !tempOutputLibUnity.delete()) {
+                    Log.w(TAG, "Failed to delete temporary libunity after undetectable version: " + tempOutputLibUnity.getAbsolutePath());
+                }
+                notifyDownloadFinished(progressListener, false, false);
+                return false;
+            }
+
+            if (!trimmedVersion.equals(binaryVersion)) {
+                Log.e(
+                        TAG,
+                        "Unity version mismatch! Expected " +
+                        trimmedVersion +
+                        ", libunity is " +
+                        binaryVersion + ". Keeping original libunity."
+                );
+
+                if (tempOutputLibUnity.exists() && !tempOutputLibUnity.delete()) {
+                    Log.w(TAG, "Failed to delete mismatched temporary libunity: " + tempOutputLibUnity.getAbsolutePath());
+                }
+
+                // Invalidate any old cache metadata (remove file)
+                if (cacheMetaFile.exists() && !cacheMetaFile.delete()) {
+                    Log.w(TAG, "Failed to delete incompatible cache metadata: " + cacheMetaFile.getAbsolutePath());
+                }
+
+                notifyDownloadFinished(progressListener, false, false);
+                return false;
+            }
+
+            // Replace existing libunity
             if (outputLibUnity.exists() && !outputLibUnity.delete()) {
                 Log.e(TAG, "Failed to replace existing libunity: " + outputLibUnity.getAbsolutePath());
                 notifyDownloadFinished(progressListener, false, false);
@@ -196,7 +237,9 @@ private static boolean downloadAndCache(
                 return false;
             }
 
-            if (!writeLibUnityCacheMeta(cacheMetaFile, cacheKey, outputLibUnity.length())) {
+            // Write cache metadata including the binary version
+            String finalCacheKey = trimmedVersion + "|" + currentAbi + "|" + binaryVersion;
+            if (!writeLibUnityCacheMeta(cacheMetaFile, finalCacheKey, outputLibUnity.length(), binaryVersion)) {
                 Log.w(TAG, "Downloaded libunity but failed to update cache metadata");
             }
 
@@ -238,7 +281,7 @@ private static boolean downloadAndCache(
         }
     }
 
-    private static boolean isCachedLibUnityValid(File outputLibUnity, File cacheMetaFile, String expectedCacheKey) {
+    private static boolean isCachedLibUnityValid(File outputLibUnity, File cacheMetaFile, String trimmedVersion, String currentAbi) {
         if (!outputLibUnity.exists() || !outputLibUnity.isFile() || outputLibUnity.length() <= 0) {
             return false;
         }
@@ -246,16 +289,22 @@ private static boolean downloadAndCache(
             return false;
         }
 
-        Properties meta = new Properties();
-        try (FileInputStream fis = new FileInputStream(cacheMetaFile)) {
-            meta.load(fis);
-        } catch (IOException e) {
-            Log.w(TAG, "Failed reading libunity cache metadata", e);
+        Properties meta = readCacheMeta(cacheMetaFile);
+        if (meta == null) {
+            return false;
+        }
+
+        // Require binary version to be present in metadata; old cache entries are invalid
+        String binaryVersion = meta.getProperty("libunityBinaryVersion", null);
+        if (binaryVersion == null || binaryVersion.isEmpty()) {
+            Log.i(TAG, "Libunity cache metadata missing binary version, treating as invalid");
             return false;
         }
 
         String actualKey = meta.getProperty("cacheKey", "");
-        if (!expectedCacheKey.equals(actualKey)) {
+        String expectedKey = trimmedVersion + "|" + currentAbi + "|" + binaryVersion;
+        if (!expectedKey.equals(actualKey)) {
+            Log.i(TAG, "Libunity cache key mismatch. expected=" + expectedKey + ", actual=" + actualKey);
             return false;
         }
 
@@ -269,10 +318,22 @@ private static boolean downloadAndCache(
         }
     }
 
-    private static boolean writeLibUnityCacheMeta(File cacheMetaFile, String cacheKey, long libunitySize) {
+    private static Properties readCacheMeta(File cacheMetaFile) {
+        Properties meta = new Properties();
+        try (FileInputStream fis = new FileInputStream(cacheMetaFile)) {
+            meta.load(fis);
+            return meta;
+        } catch (IOException e) {
+            Log.w(TAG, "Failed reading libunity cache metadata", e);
+            return null;
+        }
+    }
+
+    private static boolean writeLibUnityCacheMeta(File cacheMetaFile, String cacheKey, long libunitySize, String binaryVersion) {
         Properties meta = new Properties();
         meta.setProperty("cacheKey", cacheKey);
         meta.setProperty("libunitySize", Long.toString(libunitySize));
+        meta.setProperty("libunityBinaryVersion", binaryVersion);
 
         try (FileOutputStream fos = new FileOutputStream(cacheMetaFile, false)) {
             meta.store(fos, "libunity cache metadata");
@@ -328,5 +389,36 @@ private static boolean downloadAndCache(
 
         return null;
     }
-}
 
+    private static String detectUnityVersion(File libUnity) {
+        Pattern pattern = Pattern.compile(
+                "2022\\.\\d+\\.\\d+(?:[abcfp]\\\\d+|rc\\\\d+)?"
+        );
+
+        byte[] buffer = new byte[1024 * 1024];
+
+        try (FileInputStream in = new FileInputStream(libUnity)) {
+            StringBuilder text = new StringBuilder();
+
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                text.append(new String(buffer, 0, read, StandardCharsets.ISO_8859_1));
+
+                Matcher matcher = pattern.matcher(text);
+
+                if (matcher.find()) {
+                    return matcher.group();
+                }
+
+                // Не держим весь огромный .so в памяти.
+                if (text.length() > 4 * 1024 * 1024) {
+                    text.delete(0, text.length() - 1024 * 1024);
+                }
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to detect Unity version from libunity.so", e);
+        }
+
+        return null;
+    }
+}

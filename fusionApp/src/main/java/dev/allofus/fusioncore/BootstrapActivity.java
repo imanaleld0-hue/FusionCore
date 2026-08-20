@@ -34,10 +34,16 @@ public class BootstrapActivity extends Activity {
     private final AtomicBoolean bootstrapStarted = new AtomicBoolean(false);
     private TextView currentAction;
     private TextView logs;
-
-    private TextView statusView;
+    
+    private TextView stageView;
+    private TextView operationView;
     private TextView progressDetailsView;
-    private ProgressBar spinnerProgress;
+    private TextView percentView;
+    
+    private View errorPanel;
+    private TextView errorView;
+    private View retryButton;
+    
     private ProgressBar downloadProgress;
     private volatile PreparedFusionState preparedState;
 
@@ -46,14 +52,24 @@ public class BootstrapActivity extends Activity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bootstrap);
-        currentAction =
-                findViewById(R.id.bootstrap_current_action);
+        currentAction = findViewById(R.id.bootstrap_operation);
         logs = findViewById(R.id.bootstrap_logs);
-        statusView = findViewById(R.id.bootstrap_status);
-        progressDetailsView = findViewById(R.id.bootstrap_progress_details);
-        spinnerProgress = findViewById(R.id.bootstrap_progress);
+        errorPanel = findViewById(R.id.bootstrap_error_panel);
+        errorView = findViewById(R.id.bootstrap_error);
+        retryButton = findViewById(R.id.bootstrap_retry);
+  
+        if (errorPanel != null) {
+         errorPanel.setVisibility(View.GONE);
+         }
+        
+        stageView = findViewById(R.id.bootstrap_stage);
+        operationView = findViewById(R.id.bootstrap_operation);
+        progressDetailsView = findViewById(R.id.bootstrap_details);
+        percentView = findViewById(R.id.bootstrap_percent);
+
         downloadProgress = findViewById(R.id.bootstrap_download_progress);
-        setPhaseStatus(getString(R.string.bootstrap_status_preparing));
+
+        setPhaseStatus("Initializing");
 
         String targetPackage = getIntent().getStringExtra(EXTRA_TARGET_PACKAGE);
         if (targetPackage == null || targetPackage.isEmpty()) {
@@ -283,7 +299,7 @@ statusView.post(() ->
                     intentWrapped.putExtra(InstrumentationHooks.EXTRA_ORIGINAL_INTENT, intent);
 
                     startActivity(intentWrapped);
-                    finish();
+                
                 } catch (Throwable t) {
                     failAndFinish("Failed to launch target app's launcher activity: " + launcherClassName, t);
                 }
@@ -293,33 +309,37 @@ statusView.post(() ->
         }
     }
     private void setCurrentAction(String action) {
-    runOnUiThread(() -> {
-        if (currentAction != null) {
-            currentAction.setText("Current action: " + action);
+    runOnMainThread(() -> {
+        if (operationView != null) {
+            operationView.setText(action);
         }
 
         addLog(action);
         FusionLogger.write(action);
     });
     }
+    
     private void setPhaseStatus(String status) {
-        runOnMainThread(() -> {
-            if (statusView != null) {
-                statusView.setText(status);
-            }
-            if (spinnerProgress != null) {
-                spinnerProgress.setVisibility(View.VISIBLE);
-            }
-            if (downloadProgress != null) {
-                downloadProgress.setVisibility(View.GONE);
-                downloadProgress.setIndeterminate(false);
-                downloadProgress.setProgress(0);
-            }
-            if (progressDetailsView != null) {
-                progressDetailsView.setVisibility(View.GONE);
-                progressDetailsView.setText("");
-            }
-        });
+    runOnMainThread(() -> {
+        if (stageView != null) {
+            stageView.setText(status);
+        }
+
+        if (operationView != null) {
+            operationView.setText("Preparing...");
+        }
+
+        if (downloadProgress != null) {
+            downloadProgress.setVisibility(View.GONE);
+            downloadProgress.setIndeterminate(false);
+            downloadProgress.setProgress(0);
+        }
+
+        if (progressDetailsView != null) {
+            progressDetailsView.setVisibility(View.GONE);
+            progressDetailsView.setText("");
+        }
+    });
     }
     
     private void addLog(String line) {
@@ -331,38 +351,57 @@ statusView.post(() ->
     }
 
     private void setDownloadStatus(long downloadedBytes, long totalBytes) {
-        runOnMainThread(() -> {
-            if (spinnerProgress != null) {
-                spinnerProgress.setVisibility(View.GONE);
-            }
-            long progress = Math.max(0L, Math.min(100L, (downloadedBytes * 100L) / totalBytes));
-            if (downloadProgress != null) {
-                downloadProgress.setVisibility(View.VISIBLE);
-                boolean hasTotal = totalBytes > 0L;
-                downloadProgress.setIndeterminate(!hasTotal);
-                if (hasTotal) {
-                    int percent = (int) progress;
-                    downloadProgress.setProgress(percent);
+    runOnMainThread(() -> {
+        boolean hasTotal = totalBytes > 0L;
+
+        if (downloadProgress != null) {
+            downloadProgress.setVisibility(View.VISIBLE);
+            downloadProgress.setIndeterminate(!hasTotal);
+
+            if (hasTotal) {
+                int percent = (int) Math.max(
+                        0L,
+                        Math.min(
+                                100L,
+                                (downloadedBytes * 100L) / totalBytes
+                        )
+                );
+
+                downloadProgress.setProgress(percent);
+
+                if (percentView != null) {
+                    percentView.setText(percent + "%");
+                }
+            } else {
+                if (percentView != null) {
+                    percentView.setText("…");
                 }
             }
-            if (statusView != null) {
-                statusView.setText(getString(R.string.bootstrap_status_downloading_libunity));
-            }
-            if (progressDetailsView != null) {
-                progressDetailsView.setVisibility(View.VISIBLE);
-                int percent = totalBytes > 0L
-                        ? (int) progress
-                        : 0;
-                progressDetailsView.setText(getString(
-                        R.string.bootstrap_download_progress,
-                        percent,
-                        formatBytes(downloadedBytes),
-                        totalBytes > 0L ? formatBytes(totalBytes) : "?"
-                ));
-            }
-        });
-    }
+        }
 
+        if (stageView != null) {
+            stageView.setText("Downloading");
+        }
+
+        if (operationView != null) {
+            operationView.setText("Downloading libunity.so");
+        }
+
+        if (progressDetailsView != null) {
+            progressDetailsView.setVisibility(View.VISIBLE);
+
+            String totalText = hasTotal
+                    ? formatBytes(totalBytes)
+                    : "?";
+
+            progressDetailsView.setText(
+                    formatBytes(downloadedBytes)
+                            + " / "
+                            + totalText
+            );
+        }
+    });
+    }
     private String formatBytes(long bytes) {
         if (bytes < 1024L) {
             return bytes + " B";
@@ -378,20 +417,68 @@ statusView.post(() ->
     }
 
     private void failAndFinish(String message, Throwable error) {
-        runOnMainThread(() -> {
-            if (error != null) {
-                Log.e(TAG, message, error);
-            } else {
-                Log.e(TAG, message);
-            }
-            if (statusView != null) {
-                statusView.setText(getString(R.string.bootstrap_status_error));
-            }
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-            finish();
-        });
+    if (error != null) {
+        Log.e(TAG, message, error);
+    } else {
+        Log.e(TAG, message);
     }
 
+    FusionLogger.write(
+            message + (error != null
+                    ? "\n" + Log.getStackTraceString(error)
+                    : "")
+    );
+
+    runOnMainThread(() -> {
+        if (stageView != null) {
+            stageView.setText("Bootstrap failed");
+        }
+
+        if (operationView != null) {
+            operationView.setText(message);
+        }
+
+        if (percentView != null) {
+            percentView.setText("!");
+        }
+
+        if (downloadProgress != null) {
+            downloadProgress.setVisibility(View.GONE);
+        }
+
+        if (progressDetailsView != null) {
+            progressDetailsView.setVisibility(View.VISIBLE);
+            progressDetailsView.setText(
+                    error != null
+                            ? Log.getStackTraceString(error)
+                            : message
+            );
+        }
+
+        if (errorPanel != null) {
+            errorPanel.setVisibility(View.VISIBLE);
+        }
+
+        if (errorView != null) {
+            errorView.setText(message);
+        }
+
+        if (retryButton != null) {
+            retryButton.setOnClickListener(v -> {
+                if (errorPanel != null) {
+                    errorPanel.setVisibility(View.GONE);
+                }
+
+                if (percentView != null) {
+                    percentView.setText("0%");
+                }
+
+                setPhaseStatus("Retrying");
+            });
+        }
+    });
+    }
+  
     private void runOnMainThread(Runnable runnable) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             runnable.run();
@@ -399,7 +486,20 @@ statusView.post(() ->
             runOnUiThread(runnable);
         }
     }
+    private void setProgress(int percent) {
+    runOnMainThread(() -> {
+        int safePercent = Math.max(0, Math.min(100, percent));
 
+        if (percentView != null) {
+            percentView.setText(safePercent + "%");
+        }
+
+        if (downloadProgress != null && !downloadProgress.isIndeterminate()) {
+            downloadProgress.setProgress(safePercent);
+        }
+    });
+    }
+    
     private void initializeFusion(String launcherName, String targetPackage) {
         if (!fusionInitialized.compareAndSet(false, true)) {
             return;

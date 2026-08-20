@@ -1,164 +1,150 @@
 package dev.allofus.fusioncore.bridge;
 
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
 import android.content.ClipData;
-import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
-import android.os.Process;
-import android.util.DisplayMetrics;
+import android.util.Base64;
 import android.util.Log;
-import android.widget.Toast;
-import androidx.browser.customtabs.CustomTabsIntent;
 
-import dev.allofus.fusioncore.bridge.AuthIntentParser;
-import dev.allofus.fusioncore.bridge.AuthManager;
+import org.json.JSONObject;
 
-/**
- * JNI-мост и интероп с Android OS для FusionCore.
- * Интегрирован в пакет dev.allofus.fusioncore.bridge.
- */
-public class ActivityBridge {
-    private static final String TAG = "FusionCoreBridge";
-    private static final String ACCOUNT_MERGE_URL = "https://accounts.innersloth.com";
+import java.nio.charset.StandardCharsets;
 
-    private static Activity activity;
+public class AuthIntentParser {
 
-    public static void initialize(Activity currentActivity) {
-        activity = currentActivity;
-        Log.i(TAG, "ActivityBridge инициализирован в пакете dev.allofus.fusioncore.bridge");
-    }
+    private static final String TAG = "AuthIntentParser";
 
-    public static void cleanup() {
-        activity = null;
-    }
-
-    public static Activity getActivity() {
-        return activity;
-    }
-
-    public static boolean hasActiveActivity() {
-        return activity != null && !activity.isFinishing() && !activity.isDestroyed();
-    }
-
-    /**
-     * Обработка входящих Intent'ов для авторизации (Deep Link, Sharesheet, ClipData)
-     */
-    public static boolean handleGooglePlayMergeIntent(Intent intent) {
-        if (intent == null) return false;
-
-        String extractedToken = AuthIntentParser.INSTANCE.parseIntent(intent, activity);
-        if (extractedToken != null && !extractedToken.isEmpty()) {
-            Log.i(TAG, "Перехвачен токен авторизации: " + AuthIntentParser.INSTANCE.maskToken(extractedToken));
-            
-            // Передаем токен в менеджер сессий FusionCore
-            AuthManager.INSTANCE.handleReceivedToken(extractedToken);
-            showToast("Авторизационный токен получен");
-            return true;
+    public static String parseIntent(Intent intent, Context context) {
+        if (intent == null) {
+            return "";
         }
-        return false;
-    }
 
-    public static void openAccountMergeWindow() {
-        if (activity == null) return;
-        activity.runOnUiThread(() -> {
-            if (activity.isFinishing() || activity.isDestroyed()) return;
-            try {
-                new CustomTabsIntent.Builder().build().launchUrl(activity, Uri.parse(ACCOUNT_MERGE_URL));
-            } catch (Exception e) {
-                openUrl(ACCOUNT_MERGE_URL);
+        if (intent.getData() != null) {
+            String tokenFromUri = extractTokenFromUri(intent.getData());
+            if (!tokenFromUri.isEmpty()) {
+                return tokenFromUri;
             }
-        });
-    }
+        }
 
-    public static void openUrl(String url) {
-        if (activity == null || url == null || url.trim().isEmpty()) return;
-        activity.runOnUiThread(() -> {
-            if (activity.isFinishing() || activity.isDestroyed()) return;
-            try {
-                Uri uri = Uri.parse(url);
-                if (uri.getScheme() == null) {
-                    uri = Uri.parse("https://" + url);
-                }
-                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                intent.addCategory(Intent.CATEGORY_BROWSABLE);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                activity.startActivity(intent);
-            } catch (ActivityNotFoundException unused) {
-                Toast.makeText(activity, "Браузер не найден", Toast.LENGTH_SHORT).show();
-            } catch (Exception unused2) {
-                Toast.makeText(activity, "Не удалось открыть URL", Toast.LENGTH_SHORT).show();
+        CharSequence extraText = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
+        if (extraText != null) {
+            String tokenFromText = extractTokenFromText(extraText.toString());
+            if (!tokenFromText.isEmpty()) {
+                return tokenFromText;
             }
-        });
-    }
+        }
 
-    public static void createAlertWindow(String title, String message) {
-        if (activity == null) return;
-        activity.runOnUiThread(() -> {
-            if (activity.isFinishing() || activity.isDestroyed()) return;
-            new AlertDialog.Builder(activity)
-                    .setTitle(title)
-                    .setMessage(message)
-                    .setPositiveButton("Скопировать", (dialog, which) -> {
-                        ClipboardManager clipboardManager = (ClipboardManager) activity.getSystemService(Activity.CLIPBOARD_SERVICE);
-                        if (clipboardManager != null) {
-                            clipboardManager.setPrimaryClip(ClipData.newPlainText("FusionCore Alert", message));
-                            Toast.makeText(activity, "Скопировано в буфер обмена", Toast.LENGTH_SHORT).show();
+        String htmlText = intent.getStringExtra(Intent.EXTRA_HTML_TEXT);
+        if (htmlText != null) {
+            String tokenFromHtml = extractTokenFromText(htmlText);
+            if (!tokenFromHtml.isEmpty()) {
+                return tokenFromHtml;
+            }
+        }
+
+        if (context != null) {
+            ClipData clipData = intent.getClipData();
+            if (clipData != null) {
+                for (int i = 0; i < clipData.getItemCount(); i++) {
+                    CharSequence itemText = clipData.getItemAt(i).coerceToText(context);
+                    if (itemText != null) {
+                        String tokenFromClip = extractTokenFromText(itemText.toString());
+                        if (!tokenFromClip.isEmpty()) {
+                            return tokenFromClip;
                         }
-                        dialog.dismiss();
-                    })
-                    .setCancelable(false)
-                    .create()
-                    .show();
-        });
-    }
-
-    public static int getScreenWidth() {
-        if (activity == null) return 0;
-        if (Build.VERSION.SDK_INT >= 30) {
-            return activity.getWindowManager().getCurrentWindowMetrics().getBounds().width();
-        }
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        activity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        return displayMetrics.widthPixels;
-    }
-
-    public static int getScreenHeight() {
-        if (activity == null) return 0;
-        if (Build.VERSION.SDK_INT >= 30) {
-            return activity.getWindowManager().getCurrentWindowMetrics().getBounds().height();
-        }
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        activity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        return displayMetrics.heightPixels;
-    }
-
-    public static void showToast(String text) {
-        if (activity != null) {
-            activity.runOnUiThread(() -> Toast.makeText(activity, text, Toast.LENGTH_SHORT).show());
-        }
-    }
-
-    public static void returnToLauncher() {
-        if (activity == null) return;
-        activity.runOnUiThread(() -> {
-            if (activity.isFinishing() || activity.isDestroyed()) return;
-            try {
-                Intent launchIntent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
-                if (launchIntent != null) {
-                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-                    activity.startActivity(launchIntent);
+                    }
                 }
-            } catch (Exception ignored) {}
-            activity.overridePendingTransition(0, 0);
-            activity.finishAffinity();
-            Process.killProcess(Process.myPid());
-            System.exit(0);
-        });
-    }
-}
+            }
+        }
 
+        return "";
+    }
+
+    public static String extractTokenFromUri(Uri uri) {
+        if (uri == null) return "";
+
+        String token = safe(uri.getQueryParameter("token"));
+        if (looksLikeJwt(token)) {
+            return token;
+        }
+
+        String fragment = uri.getFragment();
+        if (fragment != null && !fragment.isEmpty()) {
+            try {
+                Uri fakeUri = Uri.parse("https://starlight.local/?" + fragment);
+                String fragmentToken = safe(fakeUri.getQueryParameter("token"));
+                if (looksLikeJwt(fragmentToken)) {
+                    return fragmentToken;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return "";
+    }
+
+    public static String extractTokenFromText(String text) {
+        String trimmed = safe(text).trim();
+        if (trimmed.isEmpty()) {
+            return "";
+        }
+
+        if (looksLikeJwt(trimmed)) {
+            return trimmed;
+        }
+
+        String[] parts = trimmed.split("\\s+");
+        for (String part : parts) {
+            String candidate = trimCandidate(part);
+            if (looksLikeJwt(candidate)) {
+                return candidate;
+            }
+        }
+        return "";
+    }
+
+    public static boolean looksLikeJwt(String str) {
+        if (str == null || str.isEmpty() || str.indexOf('=') >= 0) {
+            return false;
+        }
+        return str.matches("^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]*$");
+    }
+
+    public static JSONObject parseJwtPayload(String jwt) {
+        try {
+            String[] parts = jwt.split("\\.");
+            if (parts.length < 2) return null;
+            String base64Payload = padBase64(parts[1]);
+            byte[] decodedBytes = Base64.decode(base64Payload, Base64.URL_SAFE | Base64.NO_WRAP);
+            return new JSONObject(new String(decodedBytes, StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            Log.e(TAG, "Ошибка декодирования JWT Payload", e);
+            return null;
+        }
+    }
+
+    public static String maskToken(String token) {
+        if (token == null || token.isEmpty()) return "null";
+        if (token.length() <= 10) return "***";
+        return token.substring(0, 6) + "..." + token.substring(token.length() - 4);
+    }
+
+    private static String trimCandidate(String str) {
+        return safe(str).trim().replaceAll("^[\"'<>]+", "").replaceAll("[\"'<>.,;]+$", "");
+    }
+
+    private static String padBase64(String str) {
+        int length = str.length() % 4;
+        if (length == 0) return str;
+        StringBuilder sb = new StringBuilder(str);
+        while (length < 4) {
+            sb.append('=');
+            length++;
+        }
+        return sb.toString();
+    }
+
+    private static String safe(String str) {
+        return str == null ? "" : str;
+    }
+    }

@@ -37,8 +37,6 @@
       </intent-filter>
     </activity>
     
-  
-    
     <activity
         android:name="dev.allofus.fusioncore.BootstrapActivity"
         android:theme="@style/UnityThemeSelector"

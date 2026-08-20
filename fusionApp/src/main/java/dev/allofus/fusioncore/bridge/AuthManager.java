@@ -5,7 +5,6 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
-import dev.allofus.fusioncore.bridge.AuthIntentParser;
 
 /**
  * Менеджер управления авторизационной сессией FusionCore.

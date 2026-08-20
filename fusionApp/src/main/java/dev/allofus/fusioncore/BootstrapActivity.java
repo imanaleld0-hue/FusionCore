@@ -49,6 +49,9 @@ public class BootstrapActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setRequestedOrientation(
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        );
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bootstrap);
@@ -86,7 +89,7 @@ public class BootstrapActivity extends Activity {
         
 new Thread(
         () -> runBootstrapFlow(targetPackage),
-        "bootstrap-flow"
+    "bootstrap-flow"
 ).start();
         
     }

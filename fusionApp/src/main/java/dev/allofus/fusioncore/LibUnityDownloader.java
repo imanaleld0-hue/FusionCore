@@ -23,8 +23,8 @@ public final class LibUnityDownloader {
     private static final String TAG = "FusionCore";
     private static final String LIBUNITY_DOWNLOAD_URL = "https://unity.bepinex.dev/android/";
     private static final String LIBUNITY_CACHE_META_FILE = "libunity.cache.properties";
-    private static final Pattern UNITY_BASE_VERSION_PATTERN = Pattern.compile("^(\\d+\\.\\d+\\.\\d+");
-    private static final Pattern UNITY_FULL_VERSION_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+(?:[abcfp]\\\\d+|rc\\\\d+)?");
+    private static final Pattern UNITY_BASE_VERSION_PATTERN = Pattern.compile("^(\\d+\\.\\d+\\.\\d+)[fbp]\\d+$");
+    private static final Pattern UNITY_FULL_VERSION_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+(?:[abcfp]\\d+|rc\\d+)?");
 
     public interface DownloadProgressListener {
         void onDownloadStarted(String url, long totalBytes);
@@ -390,35 +390,54 @@ private static boolean downloadAndCache(
         return null;
     }
 
-    private static String detectUnityVersion(File libUnity) {
-        Pattern pattern = Pattern.compile(
-                "2022\\.\\d+\\.\\d+(?:[abcfp]\\\\d+|rc\\\\d+)?"
-        );
+   private static String detectUnityVersion(File libUnity) {
+    byte[] buffer = new byte[1024 * 1024];
+    Pattern pattern = Pattern.compile(
+        "2022\\.\\d+\\.\\d+(?:[abcfp]\\d+|rc\\d+)?"
+);
+    try (FileInputStream in = new FileInputStream(libUnity)) {
+        StringBuilder text = new StringBuilder();
 
-        byte[] buffer = new byte[1024 * 1024];
+        int read;
 
-        try (FileInputStream in = new FileInputStream(libUnity)) {
-            StringBuilder text = new StringBuilder();
+        while ((read = in.read(buffer)) != -1) {
+            text.append(
+                    new String(
+                            buffer,
+                            0,
+                            read,
+                            StandardCharsets.ISO_8859_1
+                    )
+            );
 
-            int read;
-            while ((read = in.read(buffer)) != -1) {
-                text.append(new String(buffer, 0, read, StandardCharsets.ISO_8859_1));
+            Matcher matcher = UNITY_FULL_VERSION_PATTERN.matcher(text);
 
-                Matcher matcher = pattern.matcher(text);
+            if (matcher.find()) {
+                String version = matcher.group();
 
-                if (matcher.find()) {
-                    return matcher.group();
-                }
+                Log.i(TAG, "Detected Unity version from libunity.so: " + version);
 
-                // Не держим весь огромный .so в памяти.
-                if (text.length() > 4 * 1024 * 1024) {
-                    text.delete(0, text.length() - 1024 * 1024);
-                }
+                return version;
             }
-        } catch (IOException e) {
-            Log.e(TAG, "Failed to detect Unity version from libunity.so", e);
+
+            if (text.length() > 4 * 1024 * 1024) {
+                text.delete(
+                        0,
+                        text.length() - 1024 * 1024
+                );
+            }
         }
 
-        return null;
+    } catch (IOException e) {
+        Log.e(
+                TAG,
+                "Failed to detect Unity version from libunity.so",
+                e
+        );
     }
+
+    Log.e(TAG, "Unity version was not found in libunity.so");
+
+    return null;
+   }
 }

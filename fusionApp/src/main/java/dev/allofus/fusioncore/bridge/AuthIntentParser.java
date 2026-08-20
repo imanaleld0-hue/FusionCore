@@ -14,8 +14,8 @@ import android.util.Log;
 import android.widget.Toast;
 import androidx.browser.customtabs.CustomTabsIntent;
 
-import dev.allofus.fusioncore.auth.AuthIntentParser;
-import dev.allofus.fusioncore.auth.AuthManager;
+import dev.allofus.fusioncore.bridge.AuthIntentParser;
+import dev.allofus.fusioncore.bridge.AuthManager;
 
 /**
  * JNI-мост и интероп с Android OS для FusionCore.

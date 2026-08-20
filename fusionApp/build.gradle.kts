@@ -14,9 +14,9 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.20")
     implementation("top.canyie.pine:core:0.3.0")
     implementation("io.github.hexhacking:xdl:2.3.0")
-    implementation("androidx.annotation:annotation-jvm:1.9.1")
-}
-
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.cardview:cardview:1.0.0")
+)
 android {
     namespace = "dev.allofus.fusioncore"
     compileSdk = 36

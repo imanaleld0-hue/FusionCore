@@ -79,54 +79,75 @@ public class VersionLookup {
      * locate the corresponding Unity data directory beside it.
      */
     public static String fromApk(File apkFile) {
-        if (apkFile == null) {
-            return null;
-        }
-
-        File parent = apkFile.isDirectory()
-                ? apkFile
-                : apkFile.getParentFile();
-
-        if (parent == null) {
-            return null;
-        }
-
-        // Common layout:
-        //
-        // /game/
-        //     game.apk
-        //     game/
-        //         globalgamemanagers
-        //
-        // Try the APK's parent first.
-        String version = TryLookup(parent);
-
-        if (version != null) {
-            return version;
-        }
-
-        // Then try directories next to the APK.
-        File[] children = parent.listFiles();
-
-        if (children == null) {
-            return null;
-        }
-
-        for (File child : children) {
-            if (!child.isDirectory()) {
-                continue;
-            }
-
-            version = TryLookup(child);
-
-            if (version != null) {
-                return version;
-            }
-        }
-
+    if (apkFile == null || !apkFile.isFile()) {
         return null;
     }
 
+    String[] candidates = {
+            "assets/bin/Data/globalgamemanagers",
+            "assets/bin/Data/data.unity3d",
+            "assets/bin/Data/mainData"
+    };
+
+    try (ZipFile zip = new ZipFile(apkFile)) {
+        for (String entryName : candidates) {
+            ZipEntry entry = zip.getEntry(entryName);
+
+            if (entry == null) {
+                continue;
+            }
+
+            try (java.io.InputStream input = zip.getInputStream(entry)) {
+                ByteArrayOutputStream output =
+                        new ByteArrayOutputStream();
+
+                byte[] buffer = new byte[8192];
+                int count;
+
+                while ((count = input.read(buffer)) != -1) {
+                    output.write(buffer, 0, count);
+                }
+
+                byte[] data = output.toByteArray();
+
+                String version = findVersionInBytes(data);
+
+                if (version != null) {
+                    return version;
+                }
+            }
+        }
+    } catch (IOException e) {
+        return null;
+    }
+
+    return null;
+    }
+    private static String findVersionInBytes(byte[] data) {
+    if (data == null || data.length == 0) {
+        return null;
+    }
+
+    String text = new String(
+            data,
+            java.nio.charset.StandardCharsets.US_ASCII
+    );
+
+    java.util.regex.Matcher matcher =
+            Pattern.compile(
+                    "\\d+\\.\\d+\\.\\d+(?:(?:rc|[abcfp])\\d+)?"
+            ).matcher(text);
+
+    if (matcher.find()) {
+        String candidate = matcher.group();
+
+        if (isValidUnityVersion(candidate)) {
+            return candidate;
+        }
+    }
+
+    return null;
+    }
     private static String readAsciiString(
             RandomAccessFile reader,
             int maxLength

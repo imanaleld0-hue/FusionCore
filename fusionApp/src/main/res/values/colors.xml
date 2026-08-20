@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+  <color name="bootstrap_background">#0B0D12</color>
+  <color name="bootstrap_card">#151922</color>
+  <color name="bootstrap_log_background">#0A0C10</color>
+
+  <color name="bootstrap_title">#FFFFFF</color>
+  <color name="bootstrap_text_primary">#F5F7FA</color>
+  <color name="bootstrap_text_secondary">#9299A8</color>
+ 
+  <color name="bootstrap_subtitle">#A6ADBB</color>
+  <color name="bootstrap_accent">#6C8CFF</color>
   <color name="staticSplashScreenBackgroundColor">#231F20</color>
 </resources>

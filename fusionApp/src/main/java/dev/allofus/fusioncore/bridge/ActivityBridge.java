@@ -20,13 +20,25 @@ import dev.allofus.fusioncore.auth.InnerslothAuthData;
 
 public class ActivityBridge {
     private static final String TAG = "ActivityBridge";
-    private static WeakReference<Activity> activityRef = new WeakReference<>(null);
+    private static WeakReference<Activity> currentActivityRef = new WeakReference<>(null);
 
     public static void initialize(Activity a) {
         activityRef = new WeakReference<>(a);
         Log.i(TAG, "init " + a.getClass().getSimpleName());
     }
-
+    
+    public static void registerActivity(Activity activity) {
+        if (activity != null) {
+            currentActivityRef = new WeakReference<>(activity);
+        }
+    }
+    public static void clearActivity(Activity activity) {
+        Activity current = currentActivityRef.get();
+        if (current == activity) {
+            currentActivityRef.clear();
+        }
+    }
+    
     public static void cleanup() { activityRef.clear(); }
     public static Activity getActivity() { return activityRef.get(); }
 
@@ -36,17 +48,20 @@ public class ActivityBridge {
     }
 
     public static boolean handleAuthIntent(Intent intent) {
-        Activity a = getActivity();
-        if (a == null) return false;
-        InnerslothAuthData d = AuthIntentParser.parseAuthIntent(intent, a);
-        if (d != null) {
-            AuthManager.getInstance().init(a);
-            AuthManager.getInstance().setAuth(d);
-            showToast("Авторизован: " + d.name);
+        Activity activity = getCurrentActivity();
+        if (activity == null || intent == null) {
+            return false;
+        }
+
+        AuthIntentParser.AuthResult result = AuthIntentParser.parseIntent(intent);
+        if (result != null && result.isValid()) {
+            Log.i(TAG, "Auth Intent processed via ActivityBridge");
+            AuthManager.getInstance(activity).setAuth(result.token, result.mergeId, result.store, 0);
             return true;
         }
         return false;
     }
+}
 
     public static void openAuthUrl(String url) {
         Activity a = getActivity();
@@ -70,7 +85,7 @@ public class ActivityBridge {
                 i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 a.startActivity(i);
             } catch (Exception e) {
-                Toast.makeText(a, "Ошибка URL", Toast.LENGTH_SHORT).show();
+                Toast.makeText(a, "Error of URL", Toast.LENGTH_SHORT).show();
             }
         });
     }

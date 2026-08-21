@@ -1,53 +1,71 @@
 package dev.allofus.fusioncore.auth;
 
 import android.content.ClipData;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Base64;
-import android.util.Log;
-
-import org.json.JSONObject;
-
-import java.nio.charset.StandardCharsets;
-import java.util.regex.Pattern;
-
+import android.text.TextUtils;
 
 public class AuthIntentParser {
 
-    private static final String TAG = "AuthIntentParser";
-    private static final Pattern JWT_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$");
+    public static class AuthResult {
+        public final String token;
+        public final String mergeId;
+        public final String store;
 
-    
-    private static final String[] AUTH_HOSTS = {
-        "accounts.innersloth.com",
-        "accounts.example.com"
-    };
-
-    public static InnerslothAuthData parseAuthIntent(Intent intent, Context context) {
-        if (intent == null) return null;
-
-
-        if (intent.getData() != null) {
-            InnerslothAuthData data = extractFromUri(intent.getData());
-            if (data != null) return data;
+        public AuthResult(String token, String mergeId, String store) {
+            this.token = token;
+            this.mergeId = mergeId;
+            this.store = store;
         }
 
+        public boolean isValid() {
+            return !TextUtils.isEmpty(token) || !TextUtils.isEmpty(mergeId);
+        }
+    }
 
-        if (extraText != null) {
-            InnerslothAuthData data = extractFromText(extraText.toString());
-            if (data != null) return data;
+    public static AuthResult parseIntent(Intent intent) {
+        if (intent == null) {
+            return null;
         }
 
-        // 3. Clipboard / ClipData
-        if (context != null) {
-            ClipData clipData = intent.getClipData();
-            if (clipData != null) {
-                for (int i = 0; i < clipData.getItemCount(); i++) {
-                    CharSequence text = clipData.getItemAt(i).coerceToText(context);
-                    if (text != null) {
-                        InnerslothAuthData data = extractFromText(text.toString());
-                        if (data != null) return data;
+        Uri dataUri = intent.getData();
+        if (dataUri != null) {
+            AuthResult result = parseUri(dataUri);
+            if (result != null && result.isValid()) {
+                return result;
+            }
+        }
+
+        
+        if (intent.hasExtra(Intent.EXTRA_TEXT)) {
+            String extraText = intent.getStringExtra(Intent.EXTRA_TEXT);
+            if (!TextUtils.isEmpty(extraText)) {
+                AuthResult result = parseRawText(extraText);
+                if (result != null && result.isValid()) {
+                    return result;
+                }
+            }
+        }
+
+        
+        ClipData clipData = intent.getClipData();
+        if (clipData != null && clipData.getItemCount() > 0) {
+            for (int i = 0; i < clipData.getItemCount(); i++) {
+                ClipData.Item item = clipData.getItemAt(i);
+                if (item != null) {
+                    CharSequence text = item.getText();
+                    if (!TextUtils.isEmpty(text)) {
+                        AuthResult result = parseRawText(text.toString());
+                        if (result != null && result.isValid()) {
+                            return result;
+                        }
+                    }
+                    Uri itemUri = item.getUri();
+                    if (itemUri != null) {
+                        AuthResult result = parseUri(itemUri);
+                        if (result != null && result.isValid()) {
+                            return result;
+                        }
                     }
                 }
             }
@@ -56,109 +74,46 @@ public class AuthIntentParser {
         return null;
     }
 
-    public static InnerslothAuthData extractFromText(String text) {
-        String trimmed = safe(text).trim();
-        if (trimmed.isEmpty()) return null;
-
-   
-        try {
-            if (trimmed.startsWith("http")) {
-                Uri uri = Uri.parse(trimmed);
-                InnerslothAuthData data = extractFromUri(uri);
-                if (data != null) return data;
-            }
-        } catch (Exception ignored) {}
-
-        
-        String[] parts = trimmed.split("\\s+");
-        for (String part : parts) {
-            String candidate = trimCandidate(part);
-            if (looksLikeJwt(candidate)) {
-                return buildFromJwt(candidate, null, null);
+    public static AuthResult parseRawText(String rawText) {
+        if (TextUtils.isEmpty(rawText)) {
+            return null;
+        }
+        rawText = rawText.trim();
+        if (rawText.startsWith("http://") || rawText.startsWith("https://")) {
+            try {
+                Uri uri = Uri.parse(rawText);
+                return parseUri(uri);
+            } catch (Exception ignored) {
             }
         }
+        
+        return new AuthResult(rawText, null, "google");
+    }
+
+    public static AuthResult parseUri(Uri uri) {
+        if (uri == null) {
+            return null;
+        }
+
+        String host = uri.getHost();
+        String path = uri.getPath();
+
+    
+        boolean isAccountMgmt = (host != null && host.contains("accounts.innersloth.com"))
+                || (path != null && path.contains("account-management"));
+
+        String token = uri.getQueryParameter("token");
+        String mergeId = uri.getQueryParameter("mergeId");
+        String store = uri.getQueryParameter("store");
+
+        if (TextUtils.isEmpty(store)) {
+            store = "google";
+        }
+
+        if (isAccountMgmt || !TextUtils.isEmpty(token) || !TextUtils.isEmpty(mergeId)) {
+            return new AuthResult(token, mergeId, store);
+        }
+
         return null;
     }
-
-    private static InnerslothAuthData extractFromUri(Uri uri) {
-        if (uri == null) return null;
-        String host = safe(uri.getHost());
-        boolean validHost = false;
-        for (String h : AUTH_HOSTS) {
-            if (h.equalsIgnoreCase(host)) { validHost = true; break; }
-        }
-        if (!validHost) return null;
-
-        String store = safe(uri.getQueryParameter("store"));
-        String token = safe(uri.getQueryParameter("token"));
-        String mergeId = safe(uri.getQueryParameter("mergeId"));
-
-        if (token.isEmpty()) return null;
-
-        return buildFromJwt(token, store, mergeId);
-    }
-
-    private static InnerslothAuthData buildFromJwt(String jwt, String store, String mergeId) {
-        JSONObject payload = parseJwtPayload(jwt);
-        if (payload == null) return null;
-
-        
-        if (!payload.has("sub") || !payload.has("exp")) {
-            Log.w(TAG, "JWT does not contain required fields (sub, exp)");
-            return null;
-        }
-
-        return new InnerslothAuthData(
-            safe(store).isEmpty() ? "google" : store,
-            jwt,
-            safe(mergeId),
-            payload.optString("sub", ""),
-            payload.optString("name", ""),
-            payload.optString("given_name", ""),
-            payload.optString("family_name", ""),
-            payload.optString("picture", ""),
-            payload.optString("email", ""),
-            payload.optLong("iat", 0),
-            payload.optLong("exp", 0)
-        );
-    }
-
-    public static JSONObject parseJwtPayload(String jwt) {
-        try {
-            String[] parts = jwt.split("\\.");
-            if (parts.length < 2) return null;
-            String base64Payload = padBase64(parts[1]);
-            byte[] decoded = Base64.decode(base64Payload, Base64.URL_SAFE | Base64.NO_WRAP);
-            return new JSONObject(new String(decoded, StandardCharsets.UTF_8));
-        } catch (Exception e) {
-            Log.e(TAG, "JWT decode error", e);
-            return null;
-        }
-    }
-
-    public static boolean looksLikeJwt(String str) {
-        if (str == null || str.isEmpty() || str.indexOf('=') >= 0) return false;
-        return JWT_PATTERN.matcher(str).matches();
-    }
-
-    public static String maskToken(String token) {
-        if (token == null || token.length() <= 12) return "***";
-        return token.substring(0, 6) + "..." + token.substring(token.length() - 4);
-    }
-
-    private static String trimCandidate(String str) {
-        return safe(str).trim()
-            .replaceAll("^[\\\"'<>]+", "")
-            .replaceAll("[\\\"'<>.,;]+$", "");
-    }
-
-    private static String padBase64(String str) {
-        int rem = str.length() % 4;
-        if (rem == 0) return str;
-        StringBuilder sb = new StringBuilder(str);
-        while (sb.length() % 4 != 0) sb.append('=');
-        return sb.toString();
-    }
-
-    private static String safe(String s) { return s == null ? "" : s; }
-        }
+}

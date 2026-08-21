@@ -6,7 +6,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.security.crypto.EncryptedSharedPreferences;
-import androidx.security.crypto.MasterKey;
+import androidx.security.crypto.MasterKey
 
 public class AuthManager {
     private static final String TAG = "AuthManager";

@@ -22,9 +22,18 @@
     <string name="bootstrap_status_registering_libraries">Registering native libraries…</string>
     <string name="bootstrap_status_installing_hooks">Installing hooks…</string>
     <string name="bootstrap_status_launching">Launching game…</string>
-     <string name="default_web_client_id">https://accounts.innersloth.com</string>
-    
+    <string name="default_web_client_id">https://accounts.innersloth.com</string>
+    <string name="selector_empty_text">No available games found or the list is empty.</string>
+    <string name="btn_launch">Start</string>
+    <string name="btn_auth">Authorization Innersloth</string>
+    <string name="auth_title">Authorization Account</string>
+    <string name="auth_description">Paste the authorization link or use the automatic Deep Link interception.</string>
+    <string name="auth_paste_hint">Paste the URL with the token or mergeId</string>
+    <string name="auth_submit">Confirm</string>
+    <string name="auth_success">Authorization saved successfully</string>
+    <string name="auth_error">Invalid link or token format</string>
+    <string name="bootstrap_loading">Launch FusionCore and prepare the environment.</string>
+    <string name="bootstrap_error">FusionCore initialization error.</string>
     <string name="bootstrap_status_error">Launch failed</string>
-    
     <string name="bootstrap_download_progress">%1$d%% (%2$s / %3$s)</string>
 </resources>

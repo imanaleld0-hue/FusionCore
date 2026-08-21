@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_subtitle">Modding Framework</string>
+    <string name="auth_title">Authentication</string>
+    <string name="auth_status_connected">Connected</string>
+    <string name="auth_status_disconnected">Not connected</string>
+    <string name="auth_action">Auth action</string>
+    <string name="auth_enter_link">Enter Auth Link</string>
+    <string name="auth_enter_link_desc">Paste your Innersloth account management link</string>
+    <string name="auth_input_hint">https://accounts.innersloth.com/…</string>
+    <string name="auth_submit">Authorize</string>
+    <string name="paste">Paste</string>
+    <string name="game_runtime">Game Runtime</string>
+    <string name="game_select_prompt">Select a game</string>
+    <string name="game_select_subtitle">No game selected</string>
+    <string name="game_select_title">Select Game</string>
+    <string name="select_game">Select</string>
+    <string name="launch">Launch</string>
+    <string name="mods">Mods</string>
+    <string name="diagnostics">Diagnostics</string>
+    <string name="logs">Logs</string>
+    <string name="settings">Settings</string>
+    <string name="cancel">Cancel</string>
+    <string name="footer_version">FusionCore v0.1</string>
+</resources>

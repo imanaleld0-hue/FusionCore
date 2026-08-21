@@ -51,7 +51,7 @@ public class ActivityBridge {
         if (!extractedToken.isEmpty()) {
             Log.i(TAG, "Authorization token intercepted: " + AuthIntentParser.maskToken(extractedToken));
 
-            if (!AuthIntentParser.LookslikeJwt(extractedToken)) {
+            if (!AuthIntentParser.looksLikeJwt(extractedToken)) {
                 Log.w(TAG, "The token has an invalid JWT structure and is rejected.");
                 showToast("Error: Invalid authorization token");
                 return false;
@@ -111,9 +111,9 @@ public class ActivityBridge {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 activity.startActivity(intent);
             } catch (ActivityNotFoundException unused) {
-                Toast.makeText(activity, "Браузер не найден", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "Browser not found", Toast.LENGTH_SHORT).show();
             } catch (Exception unused2) {
-                Toast.makeText(activity, "Не удалось открыть URL", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "Failed to open URL", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -126,11 +126,11 @@ public class ActivityBridge {
             new AlertDialog.Builder(activity)
                 .setTitle(title)
                 .setMessage(message)
-                .setPositiveButton("Скопировать", (dialog, which) -> {
+                .setPositiveButton("Copy", (dialog, which) -> {
                     ClipboardManager clipboardManager = (ClipboardManager) activity.getSystemService(Activity.CLIPBOARD_SERVICE);
                     if (clipboardManager != null) {
                         clipboardManager.setPrimaryClip(ClipData.newPlainText("FusionCore Alert", message));
-                        Toast.makeText(activity, "Скопировано в буфер обмена", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(activity, "Copied to clipboard", Toast.LENGTH_SHORT).show();
                     }
                     dialog.dismiss();
                 })

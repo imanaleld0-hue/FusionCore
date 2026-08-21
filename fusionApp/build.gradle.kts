@@ -19,10 +19,8 @@ dependencies {
     implementation("androidx.browser:browser:1.8.0")
     implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation(platform("com.google.android.gms:play-services-bom:32.1.0"))
-    
 }
 
-}
 android {
     namespace = "dev.allofus.fusioncore"
     compileSdk = 36
@@ -52,7 +50,7 @@ android {
 
     externalNativeBuild {
         cmake {
-            path = File("./src/main/jni/CMakeLists.txt")
+            path = file("src/main/jni/CMakeLists.txt")
             version = "3.31.1"
         }
     }
@@ -68,4 +66,3 @@ android {
         abortOnError = false
     }
 }
-

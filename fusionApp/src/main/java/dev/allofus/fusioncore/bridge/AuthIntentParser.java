@@ -11,15 +11,18 @@ import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Парсер токенов из Intent, Deep Link, Sharesheet и клипборда.
+ * Очищен от прямой сетевой логики и секретов.
+ */
 public class AuthIntentParser {
 
     private static final String TAG = "AuthIntentParser";
 
     public static String parseIntent(Intent intent, Context context) {
-        if (intent == null) {
-            return "";
-        }
+        if (intent == null) return "";
 
+        // 1. Проверка URI (Deep Link / Action View)
         if (intent.getData() != null) {
             String tokenFromUri = extractTokenFromUri(intent.getData());
             if (!tokenFromUri.isEmpty()) {
@@ -27,6 +30,7 @@ public class AuthIntentParser {
             }
         }
 
+        // 2. Проверка EXTRA_TEXT (Android Sharesheet)
         CharSequence extraText = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
         if (extraText != null) {
             String tokenFromText = extractTokenFromText(extraText.toString());
@@ -35,14 +39,7 @@ public class AuthIntentParser {
             }
         }
 
-        String htmlText = intent.getStringExtra(Intent.EXTRA_HTML_TEXT);
-        if (htmlText != null) {
-            String tokenFromHtml = extractTokenFromText(htmlText);
-            if (!tokenFromHtml.isEmpty()) {
-                return tokenFromHtml;
-            }
-        }
-
+        // 3. Проверка ClipData (Буфер обмена)
         if (context != null) {
             ClipData clipData = intent.getClipData();
             if (clipData != null) {
@@ -65,40 +62,29 @@ public class AuthIntentParser {
         if (uri == null) return "";
 
         String token = safe(uri.getQueryParameter("token"));
-        if (looksLikeJwt(token)) {
-            return token;
-        }
+        if (looksLikeJwt(token)) return token;
 
         String fragment = uri.getFragment();
         if (fragment != null && !fragment.isEmpty()) {
             try {
-                Uri fakeUri = Uri.parse("https://starlight.local/?" + fragment);
+                Uri fakeUri = Uri.parse("[https://accounts.example.com/](https://accounts.example.com/)?" + fragment);
                 String fragmentToken = safe(fakeUri.getQueryParameter("token"));
-                if (looksLikeJwt(fragmentToken)) {
-                    return fragmentToken;
-                }
-            } catch (Exception ignored) {
-            }
+                if (looksLikeJwt(fragmentToken)) return fragmentToken;
+            } catch (Exception ignored) {}
         }
         return "";
     }
 
     public static String extractTokenFromText(String text) {
         String trimmed = safe(text).trim();
-        if (trimmed.isEmpty()) {
-            return "";
-        }
+        if (trimmed.isEmpty()) return "";
 
-        if (looksLikeJwt(trimmed)) {
-            return trimmed;
-        }
+        if (looksLikeJwt(trimmed)) return trimmed;
 
         String[] parts = trimmed.split("\\s+");
         for (String part : parts) {
             String candidate = trimCandidate(part);
-            if (looksLikeJwt(candidate)) {
-                return candidate;
-            }
+            if (looksLikeJwt(candidate)) return candidate;
         }
         return "";
     }
@@ -113,16 +99,19 @@ public class AuthIntentParser {
     public static JSONObject parseJwtPayload(String jwt) {
         try {
             String[] parts = jwt.split("\\.");
-            if (parts.length < 2) return null;
+            if (parts.size() < 2) return null;
             String base64Payload = padBase64(parts[1]);
             byte[] decodedBytes = Base64.decode(base64Payload, Base64.URL_SAFE | Base64.NO_WRAP);
             return new JSONObject(new String(decodedBytes, StandardCharsets.UTF_8));
         } catch (Exception e) {
-            Log.e(TAG, "Ошибка декодирования JWT Payload", e);
+            Log.e(TAG, "Ошибка декодирования JWT", e);
             return null;
         }
     }
 
+    /**
+     * Маскирование токена в логах для обеспечения безопасности.
+     */
     public static String maskToken(String token) {
         if (token == null || token.isEmpty()) return "null";
         if (token.length() <= 10) return "***";
@@ -147,4 +136,4 @@ public class AuthIntentParser {
     private static String safe(String str) {
         return str == null ? "" : str;
     }
-    }
+}

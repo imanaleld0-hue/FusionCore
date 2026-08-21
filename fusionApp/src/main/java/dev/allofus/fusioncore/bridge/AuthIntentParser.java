@@ -11,10 +11,6 @@ import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
 
-/**
- * Парсер токенов из Intent, Deep Link, Sharesheet и клипборда.
- * Очищен от прямой сетевой логики и секретов.
- */
 public class AuthIntentParser {
 
     private static final String TAG = "AuthIntentParser";
@@ -22,7 +18,6 @@ public class AuthIntentParser {
     public static String parseIntent(Intent intent, Context context) {
         if (intent == null) return "";
 
-        // 1. Проверка URI (Deep Link / Action View)
         if (intent.getData() != null) {
             String tokenFromUri = extractTokenFromUri(intent.getData());
             if (!tokenFromUri.isEmpty()) {
@@ -30,7 +25,6 @@ public class AuthIntentParser {
             }
         }
 
-        // 2. Проверка EXTRA_TEXT (Android Sharesheet)
         CharSequence extraText = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
         if (extraText != null) {
             String tokenFromText = extractTokenFromText(extraText.toString());
@@ -39,7 +33,7 @@ public class AuthIntentParser {
             }
         }
 
-        // 3. Проверка ClipData (Буфер обмена)
+        
         if (context != null) {
             ClipData clipData = intent.getClipData();
             if (clipData != null) {

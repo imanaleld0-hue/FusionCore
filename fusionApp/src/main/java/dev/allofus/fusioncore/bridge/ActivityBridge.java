@@ -13,177 +13,115 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.Toast;
 import androidx.browser.customtabs.CustomTabsIntent;
-
 import java.lang.ref.WeakReference;
-
+import dev.allofus.fusioncore.auth.AuthIntentParser;
+import dev.allofus.fusioncore.auth.AuthManager;
+import dev.allofus.fusioncore.auth.InnerslothAuthData;
 
 public class ActivityBridge {
     private static final String TAG = "ActivityBridge";
-    private static final String ACCOUNT_MERGE_URL = "https://accounts.google.com/signin/oauth/identifier";
-
     private static WeakReference<Activity> activityRef = new WeakReference<>(null);
-    private static GoogleSignInHelper googleSignInHelper;
 
-    public static void initialize(Activity currentActivity) {
-        activityRef = new WeakReference<>(currentActivity);
-        Log.i(TAG, "ActivityBridge initialized: " + currentActivity.getClass().getName());
+    public static void initialize(Activity a) {
+        activityRef = new WeakReference<>(a);
+        Log.i(TAG, "init " + a.getClass().getSimpleName());
     }
 
-    public static void cleanup() {
-        activityRef.clear();
-        googleSignInHelper = null;
-    }
-
-    public static Activity getActivity() {
-        return activityRef.get();
-    }
+    public static void cleanup() { activityRef.clear(); }
+    public static Activity getActivity() { return activityRef.get(); }
 
     public static boolean hasActiveActivity() {
         Activity a = activityRef.get();
         return a != null && !a.isFinishing() && !a.isDestroyed();
     }
 
-    
-    public static boolean handleGooglePlayMergeIntent(Intent intent) {
-        if (intent == null) return false;
-
-        String extractedToken = AuthIntentParser.parseIntent(intent, getActivity());
-        if (!extractedToken.isEmpty()) {
-            Log.i(TAG, "Authorization token intercepted: " + AuthIntentParser.maskToken(extractedToken));
-
-            if (!AuthIntentParser.looksLikeJwt(extractedToken)) {
-                Log.w(TAG, "The token has an invalid JWT structure and is rejected.");
-                showToast("Error: Invalid authorization token");
-                return false;
-            }
-
-            AuthManager.getInstance().handleReceivedToken(extractedToken);
-            showToast("Authorization token successfully received!");
+    public static boolean handleAuthIntent(Intent intent) {
+        Activity a = getActivity();
+        if (a == null) return false;
+        InnerslothAuthData d = AuthIntentParser.parseAuthIntent(intent, a);
+        if (d != null) {
+            AuthManager.getInstance().init(a);
+            AuthManager.getInstance().setAuth(d);
+            showToast("Авторизован: " + d.name);
             return true;
         }
         return false;
     }
 
-    public static void startGoogleSignIn(Activity activity) {
-        if (activity == null) {
-            Log.e(TAG, "startGoogleSignIn: activity is null");
-            return;
-        }
-        if (googleSignInHelper == null) {
-            googleSignInHelper = new GoogleSignInHelper(activity);
-        }
-        googleSignInHelper.signIn(activity);
-    }
-
-    public static GoogleSignInHelper getGoogleSignInHelper() {
-        return googleSignInHelper;
-    }
-
-    public static void setGoogleSignInHelper(GoogleSignInHelper helper) {
-        googleSignInHelper = helper;
-    }
-
-    public static void openAccountMergeWindow() {
-        Activity activity = getActivity();
-        if (activity == null) return;
-        activity.runOnUiThread(() -> {
-            if (activity.isFinishing() || activity.isDestroyed()) return;
+    public static void openAuthUrl(String url) {
+        Activity a = getActivity();
+        if (a == null) return;
+        a.runOnUiThread(() -> {
             try {
-                new CustomTabsIntent.Builder().build().launchUrl(activity, Uri.parse(ACCOUNT_MERGE_URL));
-            } catch (Exception e) {
-                openUrl(ACCOUNT_MERGE_URL);
-            }
+                new CustomTabsIntent.Builder().build().launchUrl(a, Uri.parse(url));
+            } catch (Exception e) { openUrl(url); }
         });
     }
 
     public static void openUrl(String url) {
-        Activity activity = getActivity();
-        if (activity == null || url == null || url.trim().isEmpty()) return;
-        activity.runOnUiThread(() -> {
-            if (activity.isFinishing() || activity.isDestroyed()) return;
+        Activity a = getActivity();
+        if (a == null || url == null) return;
+        a.runOnUiThread(() -> {
             try {
-                Uri uri = Uri.parse(url);
-                if (uri.getScheme() == null) {
-                    uri = Uri.parse("https://" + url);
-                }
-                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                intent.addCategory(Intent.CATEGORY_BROWSABLE);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                activity.startActivity(intent);
-            } catch (ActivityNotFoundException unused) {
-                Toast.makeText(activity, "Browser not found", Toast.LENGTH_SHORT).show();
-            } catch (Exception unused2) {
-                Toast.makeText(activity, "Failed to open URL", Toast.LENGTH_SHORT).show();
+                Uri u = Uri.parse(url);
+                if (u.getScheme() == null) u = Uri.parse("https://" + url);
+                Intent i = new Intent(Intent.ACTION_VIEW, u);
+                i.addCategory(Intent.CATEGORY_BROWSABLE);
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                a.startActivity(i);
+            } catch (Exception e) {
+                Toast.makeText(a, "Ошибка URL", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    public static void createAlertWindow(String title, String message) {
-        Activity activity = getActivity();
-        if (activity == null) return;
-        activity.runOnUiThread(() -> {
-            if (activity.isFinishing() || activity.isDestroyed()) return;
-            new AlertDialog.Builder(activity)
-                .setTitle(title)
-                .setMessage(message)
-                .setPositiveButton("Copy", (dialog, which) -> {
-                    ClipboardManager clipboardManager = (ClipboardManager) activity.getSystemService(Activity.CLIPBOARD_SERVICE);
-                    if (clipboardManager != null) {
-                        clipboardManager.setPrimaryClip(ClipData.newPlainText("FusionCore Alert", message));
-                        Toast.makeText(activity, "Copied to clipboard", Toast.LENGTH_SHORT).show();
-                    }
-                    dialog.dismiss();
-                })
-                .setCancelable(false)
-                .create()
-                .show();
-        });
+    public static void createAlertWindow(String t, String m) {
+        Activity a = getActivity();
+        if (a == null) return;
+        a.runOnUiThread(() -> new AlertDialog.Builder(a)
+            .setTitle(t).setMessage(m)
+            .setPositiveButton("OK", (d, w) -> d.dismiss()).show());
     }
 
     public static int getScreenWidth() {
-        Activity activity = getActivity();
-        if (activity == null) return 0;
-        if (Build.VERSION.SDK_INT >= 30) {
-            return activity.getWindowManager().getCurrentWindowMetrics().getBounds().width();
-        }
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        activity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        return displayMetrics.widthPixels;
+        Activity a = getActivity();
+        if (a == null) return 0;
+        if (Build.VERSION.SDK_INT >= 30)
+            return a.getWindowManager().getCurrentWindowMetrics().getBounds().width();
+        DisplayMetrics dm = new DisplayMetrics();
+        a.getWindowManager().getDefaultDisplay().getMetrics(dm);
+        return dm.widthPixels;
     }
 
     public static int getScreenHeight() {
-        Activity activity = getActivity();
-        if (activity == null) return 0;
-        if (Build.VERSION.SDK_INT >= 30) {
-            return activity.getWindowManager().getCurrentWindowMetrics().getBounds().height();
-        }
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        activity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        return displayMetrics.heightPixels;
+        Activity a = getActivity();
+        if (a == null) return 0;
+        if (Build.VERSION.SDK_INT >= 30)
+            return a.getWindowManager().getCurrentWindowMetrics().getBounds().height();
+        DisplayMetrics dm = new DisplayMetrics();
+        a.getWindowManager().getDefaultDisplay().getMetrics(dm);
+        return dm.heightPixels;
     }
 
-    public static void showToast(String text) {
-        Activity activity = getActivity();
-        if (activity != null) {
-            activity.runOnUiThread(() -> Toast.makeText(activity, text, Toast.LENGTH_SHORT).show());
-        }
+    public static void showToast(String t) {
+        Activity a = getActivity();
+        if (a != null) a.runOnUiThread(() -> Toast.makeText(a, t, Toast.LENGTH_SHORT).show());
     }
 
     public static void returnToLauncher() {
-        Activity activity = getActivity();
-        if (activity == null) return;
-        activity.runOnUiThread(() -> {
-            if (activity.isFinishing() || activity.isDestroyed()) return;
+        Activity a = getActivity();
+        if (a == null) return;
+        a.runOnUiThread(() -> {
             try {
-                Intent launchIntent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
-                if (launchIntent != null) {
-                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-                    activity.startActivity(launchIntent);
+                Intent i = a.getPackageManager().getLaunchIntentForPackage(a.getPackageName());
+                if (i != null) {
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    i.addCategory(Intent.CATEGORY_LAUNCHER);
+                    a.startActivity(i);
                 }
             } catch (Exception ignored) {}
-            activity.overridePendingTransition(0, 0);
-            activity.finishAffinity();
+            a.overridePendingTransition(0, 0);
+            a.finishAffinity();
             Process.killProcess(Process.myPid());
             System.exit(0);
         });

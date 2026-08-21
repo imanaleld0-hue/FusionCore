@@ -13,6 +13,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.Toast;
 import androidx.browser.customtabs.CustomTabsIntent;
+import java.lang.ref.WeakReference;
 
 /**
  * JNI и UI Мост взаимодействия с Android Activity для FusionCore.
@@ -20,24 +21,26 @@ import androidx.browser.customtabs.CustomTabsIntent;
 public class ActivityBridge {
     private static final String TAG = "ActivityBridge";
     private static final String ACCOUNT_MERGE_URL = "[https://accounts.example.com/account-management](https://accounts.example.com/account-management)";
-
+    private static WeakReference<Activity> activityRef = new WeakReference<>(null);
+    
     private static Activity activity;
 
     public static void initialize(Activity currentActivity) {
-        activity = currentActivity;
+        activityRef = new WeakReference<>(currentActivity);
         Log.i(TAG, "ActivityBridge успешно инициализирован.");
     }
 
     public static void cleanup() {
-        activity = null;
+        activityRef.clear();
     }
 
     public static Activity getActivity() {
-        return activity;
+        return activityRef.get();
     }
 
     public static boolean hasActiveActivity() {
-        return activity != null && !activity.isFinishing() && !activity.isDestroyed();
+        Activity a = activityRef.get();
+        return a != null && !a.isFinishing() && !a.isDestroyed();
     }
 
     /**

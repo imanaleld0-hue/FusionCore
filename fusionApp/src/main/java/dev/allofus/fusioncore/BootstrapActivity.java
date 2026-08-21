@@ -126,29 +126,10 @@ public class BootstrapActivity extends Activity {
         super.onDestroy();
         ActivityBridge.cleanup();
     }
-        
 
-        
-    
-    private void startBootstrap() {
-
-        new Thread(
-        () -> runBootstrapFlow(targetPackage),
-    "bootstrap-flow"
-        ).start();
-    BootstrapManager manager =
-            BootstrapManager.getInstance();
-
-    manager.start(() -> {
-
-        runBootstrapPipeline(manager);
-
-    });
-   }
     private void runBootstrapPipeline(
         BootstrapManager manager
 ) {
-
     manager.publish(
             BootstrapStage.CHECKING_GAME,
             0,
@@ -159,10 +140,7 @@ public class BootstrapActivity extends Activity {
     );
 
     manager.log("Checking selected game...");
-
-    // ТВОЙ СУЩЕСТВУЮЩИЙ CODE
-    // проверки игры
-
+        
     manager.publish(
             BootstrapStage.COPYING_DATA,
             0,
@@ -173,9 +151,6 @@ public class BootstrapActivity extends Activity {
     );
 
     manager.log("Copying Unity Data...");
-
-    // ТВОЙ СУЩЕСТВУЮЩИЙ CODE
-    // copy Unity Data
 
     manager.publish(
             BootstrapStage.DETECTING_UNITY,
@@ -188,8 +163,6 @@ public class BootstrapActivity extends Activity {
 
     manager.log("Detecting Unity version...");
 
-    // определение версии
-
     manager.publish(
             BootstrapStage.DOWNLOADING,
             0,
@@ -201,8 +174,6 @@ public class BootstrapActivity extends Activity {
 
     manager.log("Downloading libunity...");
 
-    // download
-
     manager.publish(
             BootstrapStage.PREPARING_RUNTIME,
             0,
@@ -211,8 +182,6 @@ public class BootstrapActivity extends Activity {
             true,
             null
     );
-
-    // подготовка runtime
 
     manager.publish(
             BootstrapStage.INITIALIZING_IL2CPP,
@@ -225,7 +194,6 @@ public class BootstrapActivity extends Activity {
 
     manager.log("Initializing IL2CPP...");
 
-    // IL2CPP
 
     manager.publish(
             BootstrapStage.GENERATING_INTEROP,
@@ -238,8 +206,6 @@ public class BootstrapActivity extends Activity {
 
     manager.log("Generating interop...");
 
-    // Fusion.NET
-
     manager.publish(
             BootstrapStage.LOADING_ASSEMBLIES,
             0,
@@ -251,7 +217,6 @@ public class BootstrapActivity extends Activity {
 
     manager.log("Loading assemblies...");
 
-    // assemblies
 
     manager.publish(
             BootstrapStage.STARTING_GAME,
@@ -263,8 +228,6 @@ public class BootstrapActivity extends Activity {
     );
 
     manager.log("Starting Unity...");
-
-    // запуск игры
 
     manager.publish(
             BootstrapStage.READY,
@@ -336,8 +299,7 @@ public class BootstrapActivity extends Activity {
                 try {
                     var intent = new Intent(this, launcherClass);
 
-                    // Using the stub activity intent here avoids one extra layer of hooks running.
-                    // Its not necessary but could be more performant.
+                    
                     var intentWrapped = new Intent(this, StubActivity.class);
                     intentWrapped.putExtra(InstrumentationHooks.EXTRA_IS_DYNAMIC_ACTIVITY, true);
                     intentWrapped.putExtra(InstrumentationHooks.EXTRA_ORIGINAL_INTENT, intent);

@@ -1,6 +1,6 @@
 package dev.allofus.fusioncore;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -28,7 +28,7 @@ import dev.allofus.fusioncore.auth.AuthManager;
 import dev.allofus.fusioncore.auth.InnerslothAuthData;
 import dev.allofus.fusioncore.bridge.ActivityBridge;
 
-public class SelectorActivity extends Activity {
+public class SelectorActivity extends AppCompatActivity {
 
     private static final String TAG = "FusionCore";
     private static final int REQ_STORAGE = 1001;
@@ -69,33 +69,14 @@ public class SelectorActivity extends Activity {
         setContentView(R.layout.activity_selector);
 
         ActivityBridge.initialize(this);
-        AuthManager.getInstance().init(this);
+        AuthManager.getInstance(this).init(this);
 
         findViews();
         setup();
 
         refreshAuth();
         refreshGame();
-
-        tvEmpty = findViewById(R.id.tvSelectorEmpty);
-        if (tvEmpty != null) {
-            tvEmpty.setText(R.string.selector_empty_text);
-        }
-
-        btnOpenAuth = findViewById(R.id.btnOpenAuth);
-        if (btnOpenAuth != null) {
-            btnOpenAuth.setOnClickListener(v -> {
-                AuthBottomSheet bottomSheet = AuthBottomSheet.newInstance();
-
-                /*
-                 * Если AuthBottomSheet является androidx.fragment.app.DialogFragment,
-                 * этот Activity должен быть AppCompatActivity.
-                 *
-                 * Если он обычный android.app.DialogFragment,
-                 * используется getFragmentManager().
-                 */
-                bottomSheet.show(getFragmentManager(), "AuthBottomSheet");
-            });
+);
         }
 
         if (ActivityBridge.handleAuthIntent(getIntent())) {
@@ -185,8 +166,8 @@ public class SelectorActivity extends Activity {
 
         if (authActionButton != null) {
             authActionButton.setOnClickListener(v -> {
-                if (AuthManager.getInstance().isAuthenticated()) {
-                    AuthManager.getInstance().clearAuth();
+                if (AuthManager.getInstance(this).isAuthenticated()) {
+                    AuthManager.getInstance(this).clearAuth();
                     refreshAuth();
 
                     Toast.makeText(
@@ -198,11 +179,7 @@ public class SelectorActivity extends Activity {
                 } else {
                     AuthBottomSheet s = AuthBottomSheet.newInstance();
 
-                    s.setOnAuthResult(
-                        () -> runOnUiThread(this::refreshAuth)
-                    );
-
-                    s.show(getFragmentManager(), "auth");
+                    s.show(getSupportFragmentManager(), "auth");
                 }
             });
         }
@@ -260,7 +237,7 @@ public class SelectorActivity extends Activity {
 
     private void refreshAuth() {
         InnerslothAuthData d =
-            AuthManager.getInstance().getCurrentAuth();
+            AuthManager.getInstance(this).getCurrentAuth();
 
         if (d != null && d.isValid()) {
             if (dot != null) {

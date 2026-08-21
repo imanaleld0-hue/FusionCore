@@ -61,7 +61,7 @@ public class ActivityBridge {
         }
         return false;
     }
-}
+
 
     public static void openAuthUrl(String url) {
         Activity a = getActivity();

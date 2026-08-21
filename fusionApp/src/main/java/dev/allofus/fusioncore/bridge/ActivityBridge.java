@@ -14,14 +14,12 @@ import android.util.Log;
 import android.widget.Toast;
 import androidx.browser.customtabs.CustomTabsIntent;
 
-import dev.allofus.fusioncore.bridge.AuthManager;
-
 /**
- * Мост взаимодействия с Android Activity и управления окнами для FusionCore.
+ * JNI и UI Мост взаимодействия с Android Activity для FusionCore.
  */
 public class ActivityBridge {
     private static final String TAG = "ActivityBridge";
-    private static final String ACCOUNT_MERGE_URL = "https://accounts.innersloth.com";
+    private static final String ACCOUNT_MERGE_URL = "[https://accounts.example.com/account-management](https://accounts.example.com/account-management)";
 
     private static Activity activity;
 

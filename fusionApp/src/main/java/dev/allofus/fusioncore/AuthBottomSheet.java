@@ -1,6 +1,6 @@
 package dev.allofus.fusioncore;
 
-import android.app.DialogFragment;
+import androidx.fragment.app.DialogFragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +13,11 @@ import dev.allofus.fusioncore.auth.AuthManager;
 import dev.allofus.fusioncore.auth.InnerslothAuthData;
 
 public class AuthBottomSheet extends DialogFragment {
+    public static AuthBottomSheet newInstance() {
+        return new AuthBottomSheet();
+    }
+
+
     private Runnable onAuthResult;
     public void setOnAuthResult(Runnable r) { this.onAuthResult = r; }
 
@@ -33,7 +38,7 @@ public class AuthBottomSheet extends DialogFragment {
             if (text.isEmpty()) { Toast.makeText(getActivity(), "Введите ссылку", Toast.LENGTH_SHORT).show(); return; }
             InnerslothAuthData d = AuthIntentParser.extractFromText(text);
             if (d != null) {
-                AuthManager.getInstance().setAuth(d);
+                AuthManager.getInstance(requireContext()).setAuth(d);
                 Toast.makeText(getActivity(), "Авторизован: " + d.name, Toast.LENGTH_SHORT).show();
                 dismiss(); if (onAuthResult != null) onAuthResult.run();
             } else Toast.makeText(getActivity(), "Невалидная ссылка", Toast.LENGTH_LONG).show();

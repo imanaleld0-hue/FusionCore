@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="fc_background">#FF0F0F13</color>
+    <color name="fc_card_bg">#FF1A1A20</color>
+    <color name="fc_card_border">#FF2A2A35</color>
+    <color name="fc_text_primary">#FFFFFFFF</color>
+    <color name="fc_text_secondary">#FFB0B0C0</color>
+    <color name="fc_text_disabled">#FF606070</color>
+    <color name="fc_button_primary">#FF6366F1</color>
+    <color name="fc_button_secondary">#FF3C4043</color>
+    <color name="fc_accent">#FF8AB4F8</color>
+</resources>

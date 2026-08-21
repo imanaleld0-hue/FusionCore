@@ -14,6 +14,9 @@ import android.widget.TextView;
 import android.content.pm.ActivityInfo;
 import android.widget.Toast;
 
+import dev.allofus.fusioncore.bridge.ActivityBridge;
+import dev.allofus.fusioncore.bridge.GoogleSignInHelper;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -34,16 +37,16 @@ public class BootstrapActivity extends Activity {
     private final AtomicBoolean bootstrapStarted = new AtomicBoolean(false);
     private TextView currentAction;
     private TextView logs;
-    
+
     private TextView stageView;
     private TextView operationView;
     private TextView progressDetailsView;
     private TextView percentView;
-    
+
     private View errorPanel;
     private TextView errorView;
     private View retryButton;
-    
+
     private ProgressBar downloadProgress;
     private volatile PreparedFusionState preparedState;
 
@@ -52,16 +55,20 @@ public class BootstrapActivity extends Activity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bootstrap);
+
+       
         ActivityBridge.initialize(this);
+
         currentAction = findViewById(R.id.bootstrap_operation);
         logs = findViewById(R.id.bootstrap_logs);
         errorPanel = findViewById(R.id.bootstrap_error_panel);
         errorView = findViewById(R.id.bootstrap_error);
         retryButton = findViewById(R.id.bootstrap_retry);
-  
+
         if (errorPanel != null) {
-         errorPanel.setVisibility(View.GONE);
-         }
+            errorPanel.setVisibility(View.GONE);
+        }
+
         stageView = findViewById(R.id.bootstrap_stage);
         operationView = findViewById(R.id.bootstrap_operation);
         progressDetailsView = findViewById(R.id.bootstrap_details);
@@ -77,25 +84,48 @@ public class BootstrapActivity extends Activity {
             return;
         }
 
-        // Let the loading screen render first, then perform initialization work.
         if (!bootstrapStarted.compareAndSet(false, true)) {
-    Log.w(TAG, "Bootstrap flow already started, ignoring duplicate start");
-    return;
-}
+            Log.w(TAG, "Bootstrap flow already started, ignoring duplicate start");
+            return;
+        }
 
-   
-    
+        new Thread(() -> runBootstrapFlow(targetPackage), "bootstrap-flow").start();
+    }
 
     @Override
     protected void onNewIntent(Intent intent) {
-    super.onNewIntent(intent);
-    if (ActivityBridge.handleGooglePlayMergeIntent(intent)) {
-        Log.i(TAG, "Auth intent handled in onNewIntent");
+        super.onNewIntent(intent);
+        
+        if (ActivityBridge.handleGooglePlayMergeIntent(intent)) {
+            Log.i(TAG, "Auth intent обработан в onNewIntent");
+        }
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        boolean handled = GoogleSignInHelper.handleActivityResult(requestCode, data,
+            new GoogleSignInHelper.AuthCallback() {
+                @Override
+                public void onSuccess(com.google.android.gms.auth.api.signin.GoogleSignInAccount account) {
+                    Toast.makeText(BootstrapActivity.this, "Signed in: " + account.getDisplayName(), Toast.LENGTH_SHORT).show();
+                }
+                @Override
+                public void onError(Exception e) {
+                    Toast.makeText(BootstrapActivity.this, "Sign-in failed", Toast.LENGTH_SHORT).show();
+                }
+            });
+        if (!handled) {
+            Log.d(TAG, "onActivityResult: requestCode=" + requestCode + " не от Google Sign-In");
+        }
+    }
+
     @Override
     protected void onDestroy() {
-    super.onDestroy();
-    ActivityBridge.cleanup(); }
+        super.onDestroy();
+        ActivityBridge.cleanup();
+    }
         
 new Thread(
         () -> runBootstrapFlow(targetPackage),

@@ -23,13 +23,35 @@ import java.util.List;
 import dev.allofus.fusioncore.auth.AuthManager;
 import dev.allofus.fusioncore.auth.InnerslothAuthData;
 import dev.allofus.fusioncore.bridge.ActivityBridge;
+import dev.allofus.fusioncore.auth.AuthBottomSheet;
 
 public class SelectorActivity extends Activity {
     private static final String TAG = "FusionCore";
     private static final int REQ_STORAGE = 1001;
     private String pendingPkg, selectedPkg;
     private List<AppEntry> targets = new ArrayList<>();
+    TextView tvEmpty = findViewById(R.id.tvSelectorEmpty);
+    Button btnAuth = findViewById(R.id.btnOpenAuth); 
+    Button btnLaunch = findViewById(R.id.btnLaunchGame);
+    
+    if (tvEmpty != null) {
+            tvEmpty.setText(R.string.selector_empty_text);
+        }
+    if (btnAuth != null) {
+            btnAuth.setOnClickListener(v -> {
+                AuthBottomSheet bottomSheet = AuthBottomSheet.newInstance();
+                bottomSheet.show(getSupportFragmentManager(), "AuthBottomSheet");
+            });
+        }
 
+     if (btnLaunch != null) {
+            btnLaunch.setOnClickListener(v -> {
+                Intent intent = new Intent(SelectorActivity.this, BootstrapActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        ActivityBridge.handleAuthIntent(getIntent());
     private CardView cardAuth, cardGame, cardMods, cardDiag, cardLogs;
     private View dot;
     private TextView authStatus, authName;
@@ -40,6 +62,7 @@ public class SelectorActivity extends Activity {
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
         LogcatCollector.start(this);
+        ActivityBridge.registerActivity(this);
         setContentView(R.layout.activity_selector);
         ActivityBridge.initialize(this);
         AuthManager.getInstance().init(this);
@@ -58,8 +81,7 @@ public class SelectorActivity extends Activity {
         if (pendingPkg != null && hasStorage()) { String p = pendingPkg; pendingPkg = null; launch(p); }
     }
 
-    @Override protected void onNewIntent(Intent i) { super.onNewIntent(i); if (ActivityBridge.handleAuthIntent(i)) refreshAuth(); }
-
+    @Override protected void onNewIntent(Intent i) { super.onNewIntent(i); setIntent(i); if (ActivityBridge.handleAuthIntent(i)) refreshAuth(); }
     @Override protected void onActivityResult(int rc, int res, Intent d) {
         super.onActivityResult(rc, res, d);
         if (rc != REQ_STORAGE || pendingPkg == null) return;
@@ -67,7 +89,7 @@ public class SelectorActivity extends Activity {
         else Toast.makeText(this, R.string.selector_storage_permission_required, Toast.LENGTH_LONG).show();
     }
 
-    @Override protected void onDestroy() { super.onDestroy(); ActivityBridge.cleanup(); }
+    @Override protected void onDestroy() { super.onDestroy(); ActivityBridge.clearActivity(this); }
 
     private void findViews() {
         cardAuth = findViewById(R.id.card_auth);

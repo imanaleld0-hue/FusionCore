@@ -127,14 +127,15 @@ public class BootstrapActivity extends Activity {
         ActivityBridge.cleanup();
     }
         
-new Thread(
-        () -> runBootstrapFlow(targetPackage),
-    "bootstrap-flow"
-).start();
+
         
     
     private void startBootstrap() {
 
+        new Thread(
+        () -> runBootstrapFlow(targetPackage),
+    "bootstrap-flow"
+        ).start();
     BootstrapManager manager =
             BootstrapManager.getInstance();
 

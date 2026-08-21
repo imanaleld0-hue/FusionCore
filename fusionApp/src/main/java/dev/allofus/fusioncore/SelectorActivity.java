@@ -12,208 +12,191 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.annotation.NonNull;
-
-import dev.allofus.fusioncore.bridge.ActivityBridge;
-import dev.allofus.fusioncore.bridge.AuthManager;
-
+import androidx.cardview.widget.CardView;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import dev.allofus.fusioncore.auth.AuthManager;
+import dev.allofus.fusioncore.auth.InnerslothAuthData;
+import dev.allofus.fusioncore.bridge.ActivityBridge;
 
 public class SelectorActivity extends Activity {
-
     private static final String TAG = "FusionCore";
-    private static final int REQUEST_MANAGE_EXTERNAL_STORAGE = 1001;
+    private static final int REQ_STORAGE = 1001;
+    private String pendingPkg, selectedPkg;
+    private List<AppEntry> targets = new ArrayList<>();
 
-    private String pendingLaunchPackage;
-    private ImageButton settingsButton;
-    private View authButton;
+    private CardView cardAuth, cardGame, cardMods, cardDiag, cardLogs;
+    private View dot;
+    private TextView authStatus, authName;
+    private ImageView gameIcon;
+    private TextView gameName, gamePkg;
+    private View btnLaunch, btnSelect;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    @Override protected void onCreate(Bundle b) {
+        super.onCreate(b);
         LogcatCollector.start(this);
         setContentView(R.layout.activity_selector);
         ActivityBridge.initialize(this);
-
-        View root = findViewById(R.id.selector_root);
-        int basePadding = Math.round(getResources().getDisplayMetrics().density * 16f);
-        Utilities.applyWindowInsets(root, basePadding);
-
-        ListView listView = findViewById(R.id.selector_list);
-        TextView emptyView = findViewById(R.id.selector_empty);
-        listView.setEmptyView(emptyView);
-
-        List<AppEntry> installedTargets = resolveInstalledTargets();
-        Drawable defaultIcon = getPackageManager().getDefaultActivityIcon();
-        ArrayAdapter<AppEntry> adapter = new ArrayAdapter<>(this, R.layout.item_selector_target, installedTargets) {
-            @NonNull
-            @Override
-            public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-                RowHolder holder;
-                if (convertView == null) {
-                    convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_selector_target, parent, false);
-                    holder = new RowHolder(
-                        convertView.findViewById(R.id.row_icon),
-                        convertView.findViewById(R.id.row_name),
-                        convertView.findViewById(R.id.row_package),
-                        convertView.findViewById(R.id.row_version)
-                    );
-                    convertView.setTag(holder);
-                } else {
-                    holder = (RowHolder) convertView.getTag();
-                }
-                AppEntry entry = getItem(position);
-                if (entry != null) {
-                    holder.icon.setImageDrawable(entry.icon != null ? entry.icon : defaultIcon);
-                    holder.name.setText(entry.label);
-                    holder.packageName.setText(entry.packageName);
-                    holder.version.setText(Utilities.formatVersionText(entry.versionName, entry.versionCode));
-                }
-                return convertView;
-            }
-        };
-        listView.setAdapter(adapter);
-        listView.setOnItemClickListener((parent, view, position, id) -> {
-            AppEntry selected = installedTargets.get(position);
-            maybeLaunchAuth(selected.packageName);
-        });
-
-        settingsButton = findViewById(R.id.selector_action_settings);
-        settingsButton.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
-
-        
-        authButton = findViewById(R.id.auth_sign_in_button);
-        if (authButton != null) {
-            authButton.setOnClickListener(v -> {
-                Toast.makeText(this, "Auth: " + (AuthManager.getInstance().isSessionActive() ? "Active" : "Inactive"), Toast.LENGTH_SHORT).show();
-            });
-        }
+        AuthManager.getInstance().init(this);
+        findViews();
+        setup();
+        refreshAuth();
+        refreshGame();
+        if (ActivityBridge.handleAuthIntent(getIntent())) refreshAuth();
+        targets = resolveTargets();
+        if (targets.size() == 1) { selectedPkg = targets.get(0).packageName; refreshGame(); }
     }
 
-    @Override
-    protected void onResume() {
+    @Override protected void onResume() {
         super.onResume();
-        if (pendingLaunchPackage != null && hasExternalStorageManagerAccess()) {
-            String packageName = pendingLaunchPackage;
-            pendingLaunchPackage = null;
-            maybeLaunchAuth(packageName);
+        refreshAuth();
+        if (pendingPkg != null && hasStorage()) { String p = pendingPkg; pendingPkg = null; launch(p); }
+    }
+
+    @Override protected void onNewIntent(Intent i) { super.onNewIntent(i); if (ActivityBridge.handleAuthIntent(i)) refreshAuth(); }
+
+    @Override protected void onActivityResult(int rc, int res, Intent d) {
+        super.onActivityResult(rc, res, d);
+        if (rc != REQ_STORAGE || pendingPkg == null) return;
+        if (hasStorage()) { String p = pendingPkg; pendingPkg = null; launch(p); }
+        else Toast.makeText(this, R.string.selector_storage_permission_required, Toast.LENGTH_LONG).show();
+    }
+
+    @Override protected void onDestroy() { super.onDestroy(); ActivityBridge.cleanup(); }
+
+    private void findViews() {
+        cardAuth = findViewById(R.id.card_auth);
+        cardGame = findViewById(R.id.card_game);
+        cardMods = findViewById(R.id.card_mods);
+        cardDiag = findViewById(R.id.card_diagnostics);
+        cardLogs = findViewById(R.id.card_logs);
+        dot = findViewById(R.id.auth_status_dot);
+        authStatus = findViewById(R.id.auth_status_text);
+        authName = findViewById(R.id.auth_user_name);
+        gameIcon = findViewById(R.id.game_icon);
+        gameName = findViewById(R.id.game_name);
+        gamePkg = findViewById(R.id.game_package);
+        btnLaunch = findViewById(R.id.launch_button);
+        btnSelect = findViewById(R.id.select_game_button);
+    }
+
+    private void setup() {
+        findViewById(R.id.auth_action_button).setOnClickListener(v -> {
+            if (AuthManager.getInstance().isAuthenticated()) {
+                AuthManager.getInstance().clearAuth(); refreshAuth();
+                Toast.makeText(this, "Вы вышли", Toast.LENGTH_SHORT).show();
+            } else {
+                AuthBottomSheet s = new AuthBottomSheet();
+                s.setOnAuthResult(() -> runOnUiThread(this::refreshAuth));
+                s.show(getFragmentManager(), "auth");
+            }
+        });
+        cardAuth.setOnClickListener(v -> findViewById(R.id.auth_action_button).performClick());
+        btnLaunch.setOnClickListener(v -> { if (selectedPkg == null) showSelector(); else maybeLaunch(selectedPkg); });
+        btnSelect.setOnClickListener(v -> showSelector());
+        cardMods.setOnClickListener(v -> Toast.makeText(this, "Mods — soon", Toast.LENGTH_SHORT).show());
+        cardDiag.setOnClickListener(v -> Toast.makeText(this, "Diagnostics — soon", Toast.LENGTH_SHORT).show());
+        cardLogs.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
+    }
+
+    private void refreshAuth() {
+        InnerslothAuthData d = AuthManager.getInstance().getCurrentAuth();
+        if (d != null && d.isValid()) {
+            dot.setBackgroundResource(R.drawable.dot_green);
+            authStatus.setText(R.string.auth_status_connected);
+            authName.setText(d.name); authName.setVisibility(View.VISIBLE);
+        } else {
+            dot.setBackgroundResource(R.drawable.dot_red);
+            authStatus.setText(R.string.auth_status_disconnected);
+            authName.setVisibility(View.GONE);
         }
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != REQUEST_MANAGE_EXTERNAL_STORAGE || pendingLaunchPackage == null) return;
-        if (hasExternalStorageManagerAccess()) {
-            String packageName = pendingLaunchPackage;
-            pendingLaunchPackage = null;
-            maybeLaunchAuth(packageName);
-            return;
+    private void refreshGame() {
+        if (selectedPkg != null) {
+            AppEntry e = findEntry(selectedPkg);
+            if (e != null) {
+                gameIcon.setImageDrawable(e.icon);
+                gameName.setText(e.label);
+                gamePkg.setText(e.packageName);
+                btnLaunch.setEnabled(true); return;
+            }
         }
-        Toast.makeText(this, getString(R.string.selector_storage_permission_required), Toast.LENGTH_LONG).show();
+        gameIcon.setImageResource(R.mipmap.app_icon);
+        gameName.setText(R.string.game_select_prompt);
+        gamePkg.setText(R.string.game_select_subtitle);
+        btnLaunch.setEnabled(false);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        ActivityBridge.cleanup();
+    private AppEntry findEntry(String pkg) { for (AppEntry e : targets) if (e.packageName.equals(pkg)) return e; return null; }
+
+    private void showSelector() {
+        if (targets.isEmpty()) { Toast.makeText(this, R.string.selector_empty_text, Toast.LENGTH_LONG).show(); return; }
+        if (targets.size() == 1) { selectedPkg = targets.get(0).packageName; refreshGame(); return; }
+        String[] items = new String[targets.size()];
+        for (int i = 0; i < targets.size(); i++) items[i] = targets.get(i).label;
+        new android.app.AlertDialog.Builder(this)
+            .setTitle(R.string.game_select_title).setItems(items, (d, w) -> { selectedPkg = targets.get(w).packageName; refreshGame(); })
+            .setNegativeButton(R.string.cancel, null).show();
     }
 
-    private void maybeLaunchAuth(String packageName) {
-        if (!hasExternalStorageManagerAccess()) {
-            pendingLaunchPackage = packageName;
-            requestExternalStorageManagerAccess();
-            return;
+    private void maybeLaunch(String pkg) {
+        if (!hasStorage()) { pendingPkg = pkg; requestStorage(); return; }
+        launch(pkg);
+    }
+
+    private void launch(String pkg) {
+        Intent i = new Intent(this, BootstrapActivity.class);
+        i.putExtra(BootstrapActivity.EXTRA_TARGET_PACKAGE, pkg);
+        i.putExtra(BootstrapActivity.EXTRA_USE_ORIGINAL_LIBUNITY, !FusionSettings.isDownloadUnstrippedLibUnity(this));
+        i.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        startActivity(i); overridePendingTransition(0, 0); finish(); overridePendingTransition(0, 0);
+    }
+
+    private boolean hasStorage() { return Build.VERSION.SDK_INT < Build.VERSION_CODES.R || Environment.isExternalStorageManager(); }
+
+    private void requestStorage() {
+        Toast.makeText(this, R.string.selector_storage_permission_prompt, Toast.LENGTH_LONG).show();
+        Intent i = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+        i.setData(Uri.parse("package:" + getPackageName()));
+        try { startActivityForResult(i, REQ_STORAGE); }
+        catch (Exception e) {
+            Log.w(TAG, "storage settings failed", e);
+            try { startActivityForResult(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION), REQ_STORAGE); }
+            catch (Exception e2) { Toast.makeText(this, R.string.selector_storage_permission_open_failed, Toast.LENGTH_LONG).show(); }
         }
-        
-        Intent intent = FusionAuthActivity.createIntent(this, packageName);
-        startActivity(intent);
-        overridePendingTransition(0, 0);
     }
 
-    private List<AppEntry> resolveInstalledTargets() {
+    private List<AppEntry> resolveTargets() {
         PackageManager pm = getPackageManager();
-        List<AppEntry> result = new ArrayList<>();
-        List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
-        for (ApplicationInfo app : apps) {
+        List<AppEntry> res = new ArrayList<>();
+        for (ApplicationInfo app : pm.getInstalledApplications(PackageManager.GET_META_DATA)) {
             File libs = new File(app.nativeLibraryDir);
-            File unity = new File(libs, "libunity.so");
-            File il2cpp = new File(libs, "libil2cpp.so");
-            if (!unity.exists() || !il2cpp.exists()) continue;
+            if (!new File(libs, "libunity.so").exists() || !new File(libs, "libil2cpp.so").exists()) continue;
             if (pm.getLaunchIntentForPackage(app.packageName) == null) continue;
-
             String label = app.packageName;
             Drawable icon = pm.getDefaultActivityIcon();
-            String versionName = "Unknown";
-            long versionCode = 0L;
+            String ver = "Unknown";
+            long code = 0;
             try {
                 ApplicationInfo info = pm.getApplicationInfo(app.packageName, 0);
                 label = pm.getApplicationLabel(info).toString();
                 icon = pm.getApplicationIcon(info);
-                PackageInfo packageInfo;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    packageInfo = pm.getPackageInfo(app.packageName, PackageManager.PackageInfoFlags.of(0));
-                } else {
-                    packageInfo = pm.getPackageInfo(app.packageName, 0);
-                }
-                if (packageInfo.versionName != null && !packageInfo.versionName.isEmpty()) versionName = packageInfo.versionName;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    versionCode = packageInfo.getLongVersionCode();
-                } else {
-                    versionCode = packageInfo.versionCode;
-                }
-            } catch (Exception e) {
-                Log.w(TAG, "Failed to resolve metadata for package: " + app.packageName, e);
-            }
-            Log.i(TAG, "Found installed target: " + app.packageName + " (" + label + ")");
-            result.add(new AppEntry(app.packageName, label, icon, versionName, versionCode));
+                PackageInfo pi = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    ? pm.getPackageInfo(app.packageName, PackageManager.PackageInfoFlags.of(0))
+                    : pm.getPackageInfo(app.packageName, 0);
+                if (pi.versionName != null) ver = pi.versionName;
+                code = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P ? pi.getLongVersionCode() : pi.versionCode;
+            } catch (Exception e) { Log.w(TAG, "meta fail " + app.packageName, e); }
+            res.add(new AppEntry(app.packageName, label, icon, ver, code));
         }
-        return result;
+        return res;
     }
 
-    private boolean hasExternalStorageManagerAccess() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return true;
-        return Environment.isExternalStorageManager();
-    }
-
-    private void requestExternalStorageManagerAccess() {
-        Toast.makeText(this, getString(R.string.selector_storage_permission_prompt), Toast.LENGTH_LONG).show();
-        Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-        intent.setData(Uri.parse("package:" + getPackageName()));
-        try {
-            startActivityForResult(intent, REQUEST_MANAGE_EXTERNAL_STORAGE);
-        } catch (Exception e) {
-            Log.w(TAG, "Failed to open app-specific all-files access screen", e);
-            Intent fallbackIntent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
-            try {
-                startActivityForResult(fallbackIntent, REQUEST_MANAGE_EXTERNAL_STORAGE);
-            } catch (Exception inner) {
-                Log.e(TAG, "Failed to open all-files access settings", inner);
-                Toast.makeText(this, getString(R.string.selector_storage_permission_open_failed), Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
-    private record AppEntry(String packageName, String label, Drawable icon, String versionName, long versionCode) {
-        @NonNull
-        @Override
-        public String toString() {
-            return label.equals(packageName) ? packageName : label + " (" + packageName + ")";
-        }
-    }
-
-    private record RowHolder(ImageView icon, TextView name, TextView packageName, TextView version) {}
-            }
-                                                             
+    private record AppEntry(String packageName, String label, Drawable icon, String versionName, long versionCode) {}
+}

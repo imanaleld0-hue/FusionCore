@@ -36,7 +36,7 @@ public class AuthBottomSheet extends DialogFragment {
         v.findViewById(R.id.auth_submit).setOnClickListener(btn -> {
             String text = input.getText().toString().trim();
             if (text.isEmpty()) { Toast.makeText(getActivity(), "Введите ссылку", Toast.LENGTH_SHORT).show(); return; }
-            InnerslothAuthData d = AuthIntentParser.extractFromText(text);
+            InnerslothAuthData d = AuthIntentParser.parseRawText(text);
             if (d != null) {
                 AuthManager.getInstance(requireContext()).setAuth(d);
                 Toast.makeText(getActivity(), "Авторизован: " + d.name, Toast.LENGTH_SHORT).show();

@@ -70,8 +70,6 @@ public class SelectorActivity extends AppCompatActivity {
         ActivityBridge.registerActivity(this);
         ActivityBridge.initialize(this);
 
-        AuthManager.getInstance(this).init(this);
-
         findViews();
         setup();
 
@@ -182,10 +180,6 @@ public class SelectorActivity extends AppCompatActivity {
 
     private void setup() {
 
-        View authAction = findViewById(
-                R.id.auth_action_button
-        );
-
         if (authAction != null) {
             authAction.setOnClickListener(v -> {
 
@@ -280,47 +274,18 @@ public class SelectorActivity extends AppCompatActivity {
 
 
     private void refreshAuth() {
+        AuthManager manager = AuthManager.getInstance(this);
 
-        InnerslothAuthData data =
-                AuthManager.getInstance(this)
-                        .getCurrentAuth();
+        if (authStatus != null) {
+            authStatus.setText(
+                    manager.isAuthenticated()
+                            ? R.string.auth_status_connected
+                            : R.string.auth_status_disconnected
+            );
+        }
 
-        if (data != null && data.isValid()) {
-
-            if (dot != null) {
-                dot.setBackgroundResource(
-                        R.drawable.dot_green
-                );
-            }
-
-            if (authStatus != null) {
-                authStatus.setText(
-                        R.string.auth_status_connected
-                );
-            }
-
-            if (authName != null) {
-                authName.setText(data.name);
-                authName.setVisibility(View.VISIBLE);
-            }
-
-        } else {
-
-            if (dot != null) {
-                dot.setBackgroundResource(
-                        R.drawable.dot_red
-                );
-            }
-
-            if (authStatus != null) {
-                authStatus.setText(
-                        R.string.auth_status_disconnected
-                );
-            }
-
-            if (authName != null) {
-                authName.setVisibility(View.GONE);
-            }
+        if (authName != null) {
+            authName.setVisibility(View.GONE);
         }
     }
 

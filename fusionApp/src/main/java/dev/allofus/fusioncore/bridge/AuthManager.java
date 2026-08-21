@@ -47,7 +47,7 @@ public class AuthManager {
         this.expiresAtTimestamp = (System.currentTimeMillis() / 1000) + SESSION_TIMEOUT_SECONDS;
         this.currentToken = this.idToken;
 
-        Log.i(TAG, "Google Sign-In сессия. Пользователь: " + displayName + ", ID: " + maskId(userId));
+        Log.i(TAG, "Google Sign-In session. User: " + displayName + ", ID: " + maskId(userId));
 
 
         NativeAuthBridge.notifyAuthSuccess(userId, displayName, email, idToken);
@@ -62,14 +62,14 @@ public class AuthManager {
             
             String iss = payload.optString("iss", "");
             if (!iss.equals(EXPECTED_ISSUER_GOOGLE) && !iss.equals(EXPECTED_ISSUER_GOOGLE_ALT)) {
-                Log.e(TAG, "Невалидный issuer JWT: " + iss);
+                Log.e(TAG, "Invalid issuer JWT: " + iss);
                 return;
             }
 
             
             String aud = payload.optString("aud", "");
             if (aud.isEmpty()) {
-                Log.e(TAG, "JWT не содержит audience (aud)");
+                Log.e(TAG, "JWT does not contain  audience (aud)");
                 return;
             }
 
@@ -89,7 +89,7 @@ public class AuthManager {
 
         this.currentToken = rawToken;
         this.idToken = rawToken;
-        Log.i(TAG, "Сессия авторизована. Пользователь: " + displayName + ", Токен: " + AuthIntentParser.maskToken(currentToken));
+        Log.i(TAG, "Session Authorizated. User: " + displayName + ", Token: " + AuthIntentParser.maskToken(currentToken));
 
         NativeAuthBridge.notifyAuthSuccess(userId, displayName, email, idToken);
     }
@@ -119,7 +119,7 @@ public class AuthManager {
         this.photoUrl = "";
         this.expiresAtTimestamp = 0;
         this.isGoogleSignedIn = false;
-        Log.i(TAG, "Сессия завершена.");
+        Log.i(TAG, "Session closed.");
         NativeAuthBridge.notifyAuthLogout();
     }
 

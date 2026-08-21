@@ -26,7 +26,7 @@ public class ActivityBridge {
 
     public static void initialize(Activity currentActivity) {
         activityRef = new WeakReference<>(currentActivity);
-        Log.i(TAG, "ActivityBridge инициализирован: " + currentActivity.getClass().getName());
+        Log.i(TAG, "ActivityBridge initialized: " + currentActivity.getClass().getName());
     }
 
     public static void cleanup() {
@@ -49,16 +49,16 @@ public class ActivityBridge {
 
         String extractedToken = AuthIntentParser.parseIntent(intent, getActivity());
         if (!extractedToken.isEmpty()) {
-            Log.i(TAG, "Перехвачен авторизационный токен: " + AuthIntentParser.maskToken(extractedToken));
+            Log.i(TAG, "Authorization token intercepted: " + AuthIntentParser.maskToken(extractedToken));
 
-            if (!AuthIntentParser.isValidJwtStructure(extractedToken)) {
-                Log.w(TAG, "Токен имеет невалидную структуру JWT, отклонён");
-                showToast("Ошибка: невалидный токен авторизации");
+            if (!AuthIntentParser.LookslikeJwt(extractedToken)) {
+                Log.w(TAG, "The token has an invalid JWT structure and is rejected.");
+                showToast("Error: Invalid authorization token");
                 return false;
             }
 
             AuthManager.getInstance().handleReceivedToken(extractedToken);
-            showToast("Токен авторизации успешно получен!");
+            showToast("Authorization token successfully received!");
             return true;
         }
         return false;

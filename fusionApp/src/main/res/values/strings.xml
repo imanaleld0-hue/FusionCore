@@ -23,15 +23,6 @@
     <string name="bootstrap_status_installing_hooks">Installing hooks…</string>
     <string name="bootstrap_status_launching">Launching game…</string>
      <string name="default_web_client_id">https://accounts.innersloth.com</string>
-
-    <!-- Auth Activity -->
-    <string name="auth_title">Fusion Core</string>
-    <string name="auth_status_default">Sing in With Google for Continue.</string>
-    <string name="auth_sign_out">Log Out</string>
-    <string name="auth_continue">Continue</string>
-    <string name="auth_signed_in">Authorizated with Google</string>
-
-    <string name="selector_action_auth_label">Account</string>
     
     <string name="bootstrap_status_error">Launch failed</string>
     

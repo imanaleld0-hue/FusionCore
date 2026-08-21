@@ -93,8 +93,8 @@ public class SelectorActivity extends Activity {
         settingsButton = findViewById(R.id.selector_action_settings);
         settingsButton.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
 
-        // ← КНОПКА AUTH В ТУЛБАРЕ
-        authButton = findViewById(R.id.selector_action_auth);
+        
+        authButton = findViewById(R.id.auth_sign_in_button);
         if (authButton != null) {
             authButton.setOnClickListener(v -> {
                 Toast.makeText(this, "Auth: " + (AuthManager.getInstance().isSessionActive() ? "Active" : "Inactive"), Toast.LENGTH_SHORT).show();
@@ -137,7 +137,7 @@ public class SelectorActivity extends Activity {
             requestExternalStorageManagerAccess();
             return;
         }
-        // ← ПЕРЕХОД ЧЕРЕЗ AUTH ACTIVITY ВМЕСТО ПРЯМОГО БУТСТРАПА
+        
         Intent intent = FusionAuthActivity.createIntent(this, packageName);
         startActivity(intent);
         overridePendingTransition(0, 0);

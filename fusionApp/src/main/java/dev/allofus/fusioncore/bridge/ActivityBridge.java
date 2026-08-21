@@ -19,6 +19,22 @@ import dev.allofus.fusioncore.auth.AuthManager;
 import dev.allofus.fusioncore.auth.InnerslothAuthData;
 
 public class ActivityBridge {
+    public static boolean handleGooglePlayMergeIntent(Intent intent) {
+        return false;
+    }
+
+
+    private static Activity getCurrentActivity() {
+        return activityRef != null
+                ? activityRef.get()
+                : null;
+    }
+
+
+    private static WeakReference<Activity> activityRef =
+            new WeakReference<>(null);
+
+
     private static final String TAG = "ActivityBridge";
     private static WeakReference<Activity> ActivityRef = new WeakReference<>(null);
 
@@ -29,13 +45,13 @@ public class ActivityBridge {
     
     public static void registerActivity(Activity activity) {
         if (activity != null) {
-            currentActivityRef = new WeakReference<>(activity);
+            activityRef = new WeakReference<>(activity);
         }
     }
     public static void clearActivity(Activity activity) {
-        Activity current = currentActivityRef.get();
+        Activity current = activityRef.get();
         if (current == activity) {
-            currentActivityRef.clear();
+            activityRef.clear();
         }
     }
     

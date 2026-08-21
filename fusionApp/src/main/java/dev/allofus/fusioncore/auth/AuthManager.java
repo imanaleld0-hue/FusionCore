@@ -16,7 +16,7 @@ public class AuthManager {
     private static final String KEY_STORE = "auth_store";
     private static final String KEY_EXPIRATION = "auth_expiration";
 
-    private static AuthManager instance
+    private static AuthManager instance;
     private SharedPreferences sharedPreferences;
 
     private AuthManager(Context context) {

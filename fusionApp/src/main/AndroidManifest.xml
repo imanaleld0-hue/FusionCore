@@ -29,6 +29,17 @@
     <meta-data android:name="unity.auto-report-fully-drawn" android:value="true" />
     <meta-data android:name="com.google.android.gms.version" android:value="12451000" />
     
+    <!-- ← Deep-link-callback -->
+    <intent-filter>
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="https" 
+              android:host="accounts.example.com" 
+              android:pathPrefix="/callback"/>
+    </intent-filter>
+  </activity>
+    
     <!-- Main Launcher Activity -->
     <activity android:name="dev.allofus.fusioncore.SelectorActivity" android:theme="@style/UnityThemeSelector" android:exported="true">
       <intent-filter>

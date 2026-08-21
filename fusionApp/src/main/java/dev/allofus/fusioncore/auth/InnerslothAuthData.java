@@ -1,4 +1,4 @@
-package dev.allofus.fusioncore.auth
+package dev.allofus.fusioncore.auth;
   
 import android.os.Parcel;
 import android.os.Parcelable;

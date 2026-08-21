@@ -96,22 +96,22 @@ public class AuthIntentParser {
         return str.matches("^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]*$");
     }
 
-    public static JSONObject parseJwtPayload(String jwt) {
-        try {
-            String[] parts = jwt.split("\\.");
-            if (parts.size() < 2) return null;
-            String base64Payload = padBase64(parts[1]);
-            byte[] decodedBytes = Base64.decode(base64Payload, Base64.URL_SAFE | Base64.NO_WRAP);
-            return new JSONObject(new String(decodedBytes, StandardCharsets.UTF_8));
-        } catch (Exception e) {
-            Log.e(TAG, "Ошибка декодирования JWT", e);
-            return null;
-        }
+    
+   public static JSONObject parseJwtPayload(String jwt) {
+    try {
+        String[] parts = jwt.split("\\.");
+        if (parts.length < 2) return null;  
+        String base64Payload = padBase64(parts[1]);
+        byte[] decodedBytes = Base64.decode(base64Payload, Base64.URL_SAFE | Base64.NO_WRAP);
+        return new JSONObject(new String(decodedBytes, StandardCharsets.UTF_8));
+    } catch (Exception e) {
+        Log.e(TAG, "Ошибка декодирования JWT", e);
+        return null;
     }
+}
+    
 
-    /**
-     * Маскирование токена в логах для обеспечения безопасности.
-     */
+    
     public static String maskToken(String token) {
         if (token == null || token.isEmpty()) return "null";
         if (token.length() <= 10) return "***";

@@ -1,13 +1,10 @@
 package dev.allofus.fusioncore.bridge;
 
-import android.content.Context;
 import android.util.Log;
-
 import org.json.JSONObject;
 
-
 /**
- * Менеджер управления авторизационной сессией FusionCore.
+ * Управление авторизационной сессией с тайм-аутом 60 минут.
  */
 public class AuthManager {
 
@@ -35,7 +32,7 @@ public class AuthManager {
             this.displayName = payload.optString("name", "FusionUser");
             long exp = payload.optLong("exp", 0L);
             
-            // Если поля exp нет, ставим сессию по умолчанию на 60 минут (3600 секунд)
+            // Задаем время жизни сессии на 60 минут (3600 секунд)
             this.expiresAtTimestamp = exp > 0 ? exp : (System.currentTimeMillis() / 1000) + 3600;
         } else {
             this.userId = "user_" + System.currentTimeMillis();
@@ -44,7 +41,7 @@ public class AuthManager {
         }
 
         this.currentToken = rawToken;
-        Log.i(TAG, "Сессия авторизации обновлена для пользователя: " + displayName + " (ID: " + userId + ")");
+        Log.i(TAG, "Сессия авторизована. Пользователь: " + displayName + ", Токен: " + AuthIntentParser.maskToken(currentToken));
     }
 
     public boolean isSessionActive() {
@@ -72,6 +69,6 @@ public class AuthManager {
         this.userId = "";
         this.displayName = "";
         this.expiresAtTimestamp = 0;
-        Log.i(TAG, "Пользователь вышел из системы.");
+        Log.i(TAG, "Сессия завершена.");
     }
 }

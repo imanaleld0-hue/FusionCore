@@ -49,12 +49,10 @@ public class BootstrapActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        setRequestedOrientation(
-            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        );
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bootstrap);
+        ActivityBridge.initialize(this);
         currentAction = findViewById(R.id.bootstrap_operation);
         logs = findViewById(R.id.bootstrap_logs);
         errorPanel = findViewById(R.id.bootstrap_error_panel);
@@ -64,7 +62,6 @@ public class BootstrapActivity extends Activity {
         if (errorPanel != null) {
          errorPanel.setVisibility(View.GONE);
          }
-        
         stageView = findViewById(R.id.bootstrap_stage);
         operationView = findViewById(R.id.bootstrap_operation);
         progressDetailsView = findViewById(R.id.bootstrap_details);
@@ -86,13 +83,26 @@ public class BootstrapActivity extends Activity {
     return;
 }
 
+   
+    
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+    super.onNewIntent(intent);
+    if (ActivityBridge.handleGooglePlayMergeIntent(intent)) {
+        Log.i(TAG, "Auth intent handled in onNewIntent");
+    }
+    @Override
+    protected void onDestroy() {
+    super.onDestroy();
+    ActivityBridge.cleanup(); }
         
 new Thread(
         () -> runBootstrapFlow(targetPackage),
     "bootstrap-flow"
 ).start();
         
-    }
+    
     private void startBootstrap() {
 
     BootstrapManager manager =

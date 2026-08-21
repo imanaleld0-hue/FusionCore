@@ -68,14 +68,34 @@
 
         <!-- Main Launcher Activity -->
         <activity
-            android:name="dev.allofus.fusioncore.SelectorActivity"
-            android:theme="@style/UnityThemeSelector"
-            android:exported="true">
-            <intent-filter>
-                <category android:name="android.intent.category.LAUNCHER" />
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-        </activity>
+    android:name="dev.allofus.fusioncore.SelectorActivity"
+    android:theme="@style/UnityThemeSelector"
+    android:exported="true"
+    android:screenOrientation="landscape">
+    
+    <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+    </intent-filter>
+    
+    <!-- Sharesheet -->
+    <intent-filter>
+        <action android:name="android.intent.action.SEND" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:mimeType="text/plain" />
+    </intent-filter>
+    
+    <!-- Deep Link Innersloth -->
+    <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="https" 
+              android:host="accounts.innersloth.com" 
+              android:pathPrefix="/account-management" />
+    </intent-filter>
+</activity>
+
 
         <!-- Auth Activity -->
         <activity

@@ -29,7 +29,7 @@ public class AuthManager {
                     context.getApplicationContext(),
                     PREF_FILE,
                     masterKey,
-                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SKEY_RAW,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                     EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             );
         } catch (Exception e) {

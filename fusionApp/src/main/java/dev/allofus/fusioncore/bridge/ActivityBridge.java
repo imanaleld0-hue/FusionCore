@@ -20,7 +20,7 @@ import dev.allofus.fusioncore.auth.InnerslothAuthData;
 
 public class ActivityBridge {
     private static final String TAG = "ActivityBridge";
-    private static WeakReference<Activity> currentActivityRef = new WeakReference<>(null);
+    private static WeakReference<Activity> ActivityRef = new WeakReference<>(null);
 
     public static void initialize(Activity a) {
         activityRef = new WeakReference<>(a);

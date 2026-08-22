@@ -167,7 +167,8 @@ public class SelectorActivity extends AppCompatActivity {
 
         authStatus = findViewById(R.id.auth_status_text);
         authName = findViewById(R.id.auth_user_name);
-
+        btnSettings = findViewById(R.id.btn_settings);
+        
         gameIcon = findViewById(R.id.game_icon);
 
         gameName = findViewById(R.id.game_name);
@@ -228,18 +229,11 @@ public class SelectorActivity extends AppCompatActivity {
             );
         }
 
-
-        if (cardMods != null) {
-            cardMods.setOnClickListener(v ->
-                    Toast.makeText(
-                            this,
-                            "Mods — soon",
-                            Toast.LENGTH_SHORT
-                    ).show()
-            );
-        }
-
-
+        if (btnSettings != null) {
+    btnSettings.setOnClickListener(v ->
+        startActivity(new Intent(this, SettingsActivity.class))
+    );
+}
         if (cardDiag != null) {
             cardDiag.setOnClickListener(v ->
                     Toast.makeText(
@@ -252,13 +246,17 @@ public class SelectorActivity extends AppCompatActivity {
 
 
         if (cardLogs != null) {
-            cardLogs.setOnClickListener(v ->
-                    startActivity(
-                            new Intent(
-                                    this,
-                                    SettingsActivity.class
-                            )
-                    )
+    cardLogs.setOnClickListener(v ->
+        startActivity(new Intent(this, LogsActivity.class))
+    );
+}
+        if (cardMods != null) {
+            cardMods.setOnClickListener(v ->
+                    Toast.makeText(
+                            this,
+                            "Mods — soon",
+                            Toast.LENGTH_SHORT
+                    ).show()
             );
         }
     }

@@ -1,7 +1,6 @@
 package dev.allofus.fusioncore;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
@@ -27,8 +26,6 @@ public class SettingsActivity extends Activity {
         cacheSizeView = findViewById(R.id.settings_cache_size);
         Button btnClearCache = findViewById(R.id.settings_clear_cache);
         Button btnRefreshCache = findViewById(R.id.settings_refresh_cache);
-        Button btnMods = findViewById(R.id.settings_mods);
-        Button btnConfigs = findViewById(R.id.settings_configs);
         View back = findViewById(R.id.settings_action_back);
 
         editName.setText(FusionSettings.getPlayerName(this));
@@ -44,10 +41,8 @@ public class SettingsActivity extends Activity {
         });
         btnRefreshCache.setOnClickListener(v -> {
             clearGameCache();
-            Toast.makeText(this, "Cache will be refreshed on next launch", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Cache will refresh on next launch", Toast.LENGTH_SHORT).show();
         });
-        btnMods.setOnClickListener(v -> startActivity(new Intent(this, ModManagerActivity.class)));
-        btnConfigs.setOnClickListener(v -> startActivity(new Intent(this, ConfigEditorActivity.class)));
     }
 
     @Override protected void onPause() {
@@ -60,10 +55,8 @@ public class SettingsActivity extends Activity {
     }
 
     private void updateCacheSize() {
-        File cacheDir = new File(getExternalFilesDir(null), "cache_size_placeholder");
-        long size = 0;
         File dataDir = new File(getFilesDir(), "com.innersloth.spacemafia");
-        if (dataDir.exists()) size = folderSize(dataDir);
+        long size = folderSize(dataDir);
         cacheSizeView.setText("Cache: " + formatSize(size));
     }
 

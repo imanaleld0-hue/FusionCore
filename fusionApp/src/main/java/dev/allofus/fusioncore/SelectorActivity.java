@@ -194,6 +194,7 @@ public class SelectorActivity extends AppCompatActivity {
         gameName = findViewById(R.id.game_name);
         gamePkg = findViewById(R.id.game_package);
 
+        btnSettings = findViewById(R.id.btn_settings);
         btnLaunch = findViewById(R.id.launch_button);
         btnSelect = findViewById(R.id.select_game_button);
     }

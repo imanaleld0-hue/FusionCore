@@ -144,7 +144,7 @@ public class UnityPlayerHooks {
                 }
 
                 @Override
-public void afterCall(Pine.CallFrame callFrame) {
+                public void afterCall(Pine.CallFrame callFrame) {
     if (activity == null) {
         return;
     }

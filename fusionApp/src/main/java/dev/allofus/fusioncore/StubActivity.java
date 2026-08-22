@@ -13,17 +13,16 @@ import android.view.WindowManager;
 public class StubActivity extends Activity {
     private static final String TAG = "StubActivity";
 
-    @Override
-    protected void onCreate(Bundle bundle) {
+    @Override protected void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         enableImmersiveMode();
         Intent current = getIntent();
         if (current != null && current.getBooleanExtra(InstrumentationHooks.EXTRA_IS_DYNAMIC_ACTIVITY, false)) {
             Intent original = current.getParcelableExtra(InstrumentationHooks.EXTRA_ORIGINAL_INTENT);
             if (original != null && original.getComponent() != null) {
-                Log.d(TAG, "Dynamic activity placeholder: " + original.getComponent().getClassName());
+                Log.d(TAG, "Placeholder: " + original.getComponent().getClassName());
             } else {
-                Log.e(TAG, "Dynamic activity has no valid original intent");
+                Log.e(TAG, "No valid original intent");
             }
         }
     }
@@ -31,25 +30,21 @@ public class StubActivity extends Activity {
     private void enableImmersiveMode() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             getWindow().setDecorFitsSystemWindows(false);
-            WindowInsetsController controller = getWindow().getInsetsController();
-            if (controller != null) {
-                controller.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-                controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            WindowInsetsController c = getWindow().getInsetsController();
+            if (c != null) {
+                c.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+                c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
             }
         } else {
             getWindow().getDecorView().setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                            | View.SYSTEM_UI_FLAG_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            );
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN |
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
         }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
+    @Override public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) enableImmersiveMode();
     }

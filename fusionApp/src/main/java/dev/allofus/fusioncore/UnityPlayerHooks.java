@@ -24,7 +24,6 @@ public class UnityPlayerHooks {
             "com.unity3d.player.UnityPlayerForActivityOrService"
     };
 
-    // Inject CustomContextWrapper into the UnityPlayer constructor.
     public static void installHooks(Context gameContext) {
         ClassLoader classLoader = gameContext.getClassLoader();
 

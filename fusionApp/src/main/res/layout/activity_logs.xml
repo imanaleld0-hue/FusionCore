@@ -1,65 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/logs_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/fc_background"
-    android:padding="16dp">
+    android:background="@color/fc_background">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingBottom="6dp">
+        android:padding="16dp">
 
         <ImageButton
             android:id="@+id/logs_action_back"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:layout_marginEnd="4dp"
             android:src="@drawable/ic_back"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:scaleType="centerInside"
-            android:contentDescription="@string/settings_action_back" />
+            android:background="?android:attr/selectableItemBackgroundBorderless" />
 
         <TextView
-            android:id="@+id/logs_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginStart="12dp"
             android:text="Logs"
             android:textColor="@color/fc_text_primary"
-            android:textSize="24sp"
+            android:textSize="22sp"
             android:textStyle="bold" />
 
+        <TextView
+            android:id="@+id/logs_action_clear"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Clear"
+            android:textColor="@color/fc_accent"
+            android:padding="8dp"
+            android:background="?android:attr/selectableItemBackground" />
     </LinearLayout>
 
-    <androidx.cardview.widget.CardView
+    <TextView
+        android:id="@+id/logs_empty"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="8dp"
-        app:cardBackgroundColor="@color/fc_card_bg"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="4dp">
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="32dp"
+        android:text="No logs found"
+        android:textColor="@color/fc_text_secondary"
+        android:textSize="16sp"
+        android:visibility="gone" />
 
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="12dp">
-
-            <TextView
-                android:id="@+id/logs_text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="monospace"
-                android:textColor="@color/fc_text_secondary"
-                android:textSize="11sp" />
-        </ScrollView>
-    </androidx.cardview.widget.CardView>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/logs_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingHorizontal="12dp" />
 
 </LinearLayout>
-                

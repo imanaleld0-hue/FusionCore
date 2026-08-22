@@ -179,45 +179,36 @@ public class SelectorActivity extends AppCompatActivity {
 
 
     private void setup() {
+        if (cardAuth != null) {
+    cardAuth.setOnClickListener(v -> {
 
-        if (authAction != null) {
-            authAction.setOnClickListener(v -> {
+        AuthManager manager =
+                AuthManager.getInstance(this);
 
-                AuthManager manager =
-                        AuthManager.getInstance(this);
+        if (manager.isAuthenticated()) {
 
-                if (manager.isAuthenticated()) {
+            manager.clearAuth();
 
-                    manager.clearAuth();
+            refreshAuth();
 
-                    refreshAuth();
+            Toast.makeText(
+                    this,
+                    "You're out",
+                    Toast.LENGTH_SHORT
+            ).show();
 
-                    Toast.makeText(
-                            this,
-                            "Вы вышли",
-                            Toast.LENGTH_SHORT
-                    ).show();
+        } else {
 
-                } else {
+            AuthBottomSheet sheet =
+                    AuthBottomSheet.newInstance();
 
-                    AuthBottomSheet sheet =
-                            AuthBottomSheet.newInstance();
-
-                    sheet.show(
-                            getSupportFragmentManager(),
-                            "AuthBottomSheet"
-                    );
-                }
-            });
-        }
-
-
-        if (cardAuth != null && authAction != null) {
-            cardAuth.setOnClickListener(
-                    v -> authAction.performClick()
+            sheet.show(
+                    getSupportFragmentManager(),
+                    "AuthBottomSheet"
             );
         }
-
+    });
+        }
 
         if (btnLaunch != null) {
             btnLaunch.setOnClickListener(v -> {

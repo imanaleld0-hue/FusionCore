@@ -12,6 +12,9 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -129,17 +132,6 @@ public class SelectorActivity extends AppCompatActivity {
         }
     }
 
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-
-        setIntent(intent);
-
-        if (ActivityBridge.handleAuthIntent(intent)) {
-            refreshAuth();
-        }
-    }
 
 
     @Override

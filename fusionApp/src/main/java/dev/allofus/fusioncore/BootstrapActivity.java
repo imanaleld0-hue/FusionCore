@@ -58,7 +58,7 @@ public class BootstrapActivity extends Activity {
         percentView = findViewById(R.id.bootstrap_percent);
         downloadProgress = findViewById(R.id.bootstrap_download_progress);
         setPhaseStatus("Initializing");
-        if (FusionSettings.isAutoClearLogs(this)) autoClearLogs();
+        if (FusionSettings.isAutoClearLogs(this)) LogcatCollector.clearLogs(this);
         String targetPackage = getIntent().getStringExtra(EXTRA_TARGET_PACKAGE);
         if (targetPackage == null || targetPackage.isEmpty()) {
             failAndFinish("No target package specified!", null); return;
@@ -84,14 +84,6 @@ public class BootstrapActivity extends Activity {
                 View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
         }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    }
-
-    private void autoClearLogs() {
-        File logDir = new File(getExternalFilesDir(null), "logs");
-        if (logDir.exists() && logDir.isDirectory()) {
-            File[] files = logDir.listFiles();
-            if (files != null) for (File f : files) f.delete();
-        }
     }
 
     @Override protected void onNewIntent(Intent intent) {
@@ -148,6 +140,7 @@ public class BootstrapActivity extends Activity {
                     wrapped.putExtra(InstrumentationHooks.EXTRA_IS_DYNAMIC_ACTIVITY, true);
                     wrapped.putExtra(InstrumentationHooks.EXTRA_ORIGINAL_INTENT, intent);
                     startActivity(wrapped);
+                    finish();
                 } catch (Throwable t) { failAndFinish("Launch failed: " + launcherClassName, t); }
             });
         } catch (Exception e) { failAndFinish("Launch failed: " + launcherClassName, e); }

@@ -67,7 +67,9 @@ public class SelectorActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_selector);
-
+        
+        enableImmersiveMode();
+        
         LogcatCollector.start(this);
 
         ActivityBridge.registerActivity(this);
@@ -109,13 +111,20 @@ public class SelectorActivity extends AppCompatActivity {
         }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
-
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            enableImmersiveMode();
+        }
+    }
+    
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
 
         if (ActivityBridge.handleGooglePlayMergeIntent(intent)) {
-            Log.i(TAG, "Auth intent обработан в onNewIntent");
+            Log.i(TAG, "Auth intent processed in onNewIntent");
         }
     }
     
@@ -124,7 +133,8 @@ public class SelectorActivity extends AppCompatActivity {
         super.onResume();
 
         refreshAuth();
-
+        
+        enableImmersiveMode();
         if (pendingPkg != null && hasStorage()) {
             String pkg = pendingPkg;
             pendingPkg = null;

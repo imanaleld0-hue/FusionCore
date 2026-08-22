@@ -4,21 +4,18 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/fc_background">
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:padding="16dp">
-
         <ImageButton
             android:id="@+id/logs_action_back"
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:src="@drawable/ic_back"
             android:background="?android:attr/selectableItemBackgroundBorderless" />
-
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -28,7 +25,10 @@
             android:textColor="@color/fc_text_primary"
             android:textSize="22sp"
             android:textStyle="bold" />
-
+        <Spinner
+            android:id="@+id/logs_filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
         <TextView
             android:id="@+id/logs_action_clear"
             android:layout_width="wrap_content"
@@ -38,22 +38,19 @@
             android:padding="8dp"
             android:background="?android:attr/selectableItemBackground" />
     </LinearLayout>
-
     <TextView
         android:id="@+id/logs_empty"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:padding="32dp"
-        android:text="No logs found"
+        android:text="No logs"
         android:textColor="@color/fc_text_secondary"
         android:textSize="16sp"
         android:visibility="gone" />
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/logs_recycler"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingHorizontal="12dp" />
-
 </LinearLayout>

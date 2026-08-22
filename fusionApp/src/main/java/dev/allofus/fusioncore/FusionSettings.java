@@ -3,23 +3,28 @@ package dev.allofus.fusioncore;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-public final class FusionSettings {
-    private static final String PREFS_NAME = "fusion_settings";
-    private static final String KEY_DOWNLOAD_UNSTRIPPED_LIBUNITY = "download_unstripped_libunity";
+public class FusionSettings {
+    private static final String PREFS = "fusion_settings";
 
-    private FusionSettings() {
+    public static String getPlayerName(Context ctx) {
+        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("player_name", "Player");
     }
-
-    private static SharedPreferences prefs(Context context) {
-        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+    public static void setPlayerName(Context ctx, String name) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("player_name", name).apply();
     }
-
-    // use when non-f1 unity build
-    public static boolean isDownloadUnstrippedLibUnity(Context context) {
-        return prefs(context).getBoolean(KEY_DOWNLOAD_UNSTRIPPED_LIBUNITY, true);
+    public static int getPlayerLevel(Context ctx) {
+        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt("player_level", 1);
     }
-
-    public static void setDownloadUnstrippedLibUnity(Context context, boolean enabled) {
-        prefs(context).edit().putBoolean(KEY_DOWNLOAD_UNSTRIPPED_LIBUNITY, enabled).apply();
+    public static void setPlayerLevel(Context ctx, int level) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putInt("player_level", level).apply();
+    }
+    public static boolean isAutoClearLogs(Context ctx) {
+        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("auto_clear_logs", false);
+    }
+    public static void setAutoClearLogs(Context ctx, boolean v) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean("auto_clear_logs", v).apply();
+    }
+    public static boolean isDownloadUnstrippedLibUnity(Context ctx) {
+        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("download_unstripped", true);
     }
 }

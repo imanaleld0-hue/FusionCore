@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="20dp"
-        android:paddingTop="48dp">
+        android:paddingTop="64dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -52,15 +52,15 @@
             android:id="@+id/card_game"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="32dp"
             app:cardBackgroundColor="@color/fc_card_bg"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="4dp">
+            app:cardCornerRadius="20dp"
+            app:cardElevation="6dp">
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -72,26 +72,27 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="14dp"
                     android:gravity="center_vertical">
                     <ImageView
                         android:id="@+id/game_icon"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
                         android:src="@mipmap/app_icon" />
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:orientation="vertical"
-                        android:layout_marginStart="12dp">
+                        android:layout_marginStart="14dp">
                         <TextView
                             android:id="@+id/game_name"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Among Us"
                             android:textColor="@color/fc_text_primary"
-                            android:textSize="15sp" />
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
                         <TextView
                             android:id="@+id/game_package"
                             android:layout_width="wrap_content"
@@ -105,8 +106,9 @@
                     android:id="@+id/launch_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="16dp"
                     android:text="Launch"
+                    android:textSize="16sp"
                     android:backgroundTint="@color/fc_button_primary"
                     android:textColor="@android:color/white" />
             </LinearLayout>
@@ -118,7 +120,7 @@
             android:layout_height="80dp"
             android:layout_marginTop="16dp"
             app:cardBackgroundColor="@color/fc_card_bg"
-            app:cardCornerRadius="16dp"
+            app:cardCornerRadius="20dp"
             app:cardElevation="4dp"
             android:foreground="?attr/selectableItemBackground"
             android:clickable="true"
@@ -128,19 +130,19 @@
                 android:layout_height="match_parent"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:padding="16dp">
+                android:padding="18dp">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#9881;" android:textSize="28sp" />
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:text="Mods" android:textColor="@color/fc_text_primary" android:textSize="15sp" android:textStyle="bold" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
         <androidx.cardview.widget.CardView
-            android:id="@+id/card_diagnostics"
+            android:id="@+id/card_configs"
             android:layout_width="match_parent"
             android:layout_height="80dp"
             android:layout_marginTop="12dp"
             app:cardBackgroundColor="@color/fc_card_bg"
-            app:cardCornerRadius="16dp"
+            app:cardCornerRadius="20dp"
             app:cardElevation="4dp"
             android:foreground="?attr/selectableItemBackground"
             android:clickable="true"
@@ -150,7 +152,7 @@
                 android:layout_height="match_parent"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:padding="16dp">
+                android:padding="18dp">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#128221;" android:textSize="28sp" />
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:text="Configs" android:textColor="@color/fc_text_primary" android:textSize="15sp" android:textStyle="bold" />
             </LinearLayout>
@@ -162,7 +164,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             app:cardBackgroundColor="@color/fc_card_bg"
-            app:cardCornerRadius="16dp"
+            app:cardCornerRadius="20dp"
             app:cardElevation="4dp"
             android:foreground="?attr/selectableItemBackground"
             android:clickable="true"
@@ -171,7 +173,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="16dp"
+                android:padding="18dp"
                 android:gravity="center_vertical">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#128203;" android:textSize="24sp" />
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="12dp" android:text="Logs" android:textColor="@color/fc_text_primary" android:textSize="15sp" android:textStyle="bold" />
@@ -185,7 +187,7 @@
             android:layout_height="80dp"
             android:layout_marginTop="12dp"
             app:cardBackgroundColor="@color/fc_card_bg"
-            app:cardCornerRadius="16dp"
+            app:cardCornerRadius="20dp"
             app:cardElevation="4dp"
             android:foreground="?attr/selectableItemBackground"
             android:clickable="true"
@@ -195,7 +197,7 @@
                 android:layout_height="match_parent"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:padding="16dp">
+                android:padding="18dp">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#128187;" android:textSize="28sp" />
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:text="GitHub" android:textColor="@color/fc_text_primary" android:textSize="15sp" android:textStyle="bold" />
             </LinearLayout>
@@ -205,7 +207,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="32dp"
             android:text="@string/footer_version"
             android:textColor="@color/fc_text_disabled"
             android:textSize="12sp" />

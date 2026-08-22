@@ -105,19 +105,20 @@ public class LogsActivity extends Activity {
         try (BufferedReader r = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = r.readLine()) != null) {
-                if (isMiuiNoise(line)) continue;
+                if (isNoise(line)) continue;
                 sb.append(line).append("\n");
             }
         } catch (IOException e) { return "Error: " + e.getMessage(); }
         return sb.toString();
     }
 
-    private boolean isMiuiNoise(String line) {
+    private boolean isNoise(String line) {
         if (line == null) return true;
         String l = line.toLowerCase();
         return l.contains("miui") || l.contains("wmdebug") || l.contains("forcedark") || l.contains("handwriting")
                 || l.contains("blastbuffer") || l.contains("userscenedetector") || l.contains("vri[")
-                || l.contains("inputeventreceiver") || l.contains("inputtransport");
+                || l.contains("inputeventreceiver") || l.contains("inputtransport") || l.contains("perfmonitor")
+                || l.contains("decorviewimmersive") || l.contains("bufferqueue") || l.contains("surfaceview");
     }
 
     private void showLogContent(File file) {

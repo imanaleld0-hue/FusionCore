@@ -19,7 +19,7 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.fragment:fragment:1.6.2")
-    implementation("top.canyie.pine:pine:0.2.9")
+    implementation("top.canyie.pine:core:0.3.0")
        
     
     implementation("androidx.security:security-crypto:1.1.0-alpha06")

@@ -9,16 +9,16 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
-import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -26,30 +26,40 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 public class LogsActivity extends Activity {
-
-    private RecyclerView recyclerView;
+    private RecyclerView recycler;
     private LogAdapter adapter;
     private TextView emptyView;
     private File logDir;
+    private String currentFilter = "All";
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_logs);
-        ImageButton backButton = findViewById(R.id.logs_action_back);
-        backButton.setOnClickListener(v -> finish());
-        TextView clearButton = findViewById(R.id.logs_action_clear);
-        clearButton.setOnClickListener(v -> clearAllLogs());
-        recyclerView = findViewById(R.id.logs_recycler);
+        ImageButton back = findViewById(R.id.logs_action_back);
+        TextView clear = findViewById(R.id.logs_action_clear);
+        Spinner filter = findViewById(R.id.logs_filter);
+        recycler = findViewById(R.id.logs_recycler);
         emptyView = findViewById(R.id.logs_empty);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recycler.setLayoutManager(new LinearLayoutManager(this));
+        back.setOnClickListener(v -> finish());
+        clear.setOnClickListener(v -> { clearAllLogs(); refreshList(); });
         logDir = new File(getExternalFilesDir(null), "logs");
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
+                new String[]{"All", "Java", "Native", "BepInEx", "Hooking"});
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        filter.setAdapter(spinnerAdapter);
+        filter.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
+                currentFilter = (String) p.getItemAtPosition(pos);
+                refreshList();
+            }
+            @Override public void onNothingSelected(AdapterView<?> p) {}
+        });
         refreshList();
     }
 
@@ -59,24 +69,25 @@ public class LogsActivity extends Activity {
             File[] files = logDir.listFiles();
             if (files != null) {
                 for (File f : files) {
-                    if (f.isFile()) entries.add(new LogEntry(f.getName(), f.length(), f.lastModified(), f));
+                    if (!f.isFile()) continue;
+                    String name = f.getName();
+                    if (!name.endsWith(".log")) continue;
+                    if (!currentFilter.equals("All") && !name.contains(currentFilter)) continue;
+                    entries.add(new LogEntry(name, f.length(), f.lastModified(), f));
                 }
             }
         }
         Collections.sort(entries, (a, b) -> Long.compare(b.modified, a.modified));
         adapter = new LogAdapter(entries);
-        recyclerView.setAdapter(adapter);
+        recycler.setAdapter(adapter);
         emptyView.setVisibility(entries.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
     private void clearAllLogs() {
         if (logDir.exists() && logDir.isDirectory()) {
             File[] files = logDir.listFiles();
-            if (files != null) {
-                for (File f : files) f.delete();
-            }
+            if (files != null) for (File f : files) f.delete();
         }
-        refreshList();
         Toast.makeText(this, "Logs cleared", Toast.LENGTH_SHORT).show();
     }
 
@@ -91,88 +102,79 @@ public class LogsActivity extends Activity {
 
     private String readLog(File file) {
         StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader r = new BufferedReader(new FileReader(file))) {
             String line;
-            while ((line = reader.readLine()) != null) sb.append(line).append("\n");
-        } catch (IOException e) {
-            return "Failed to read: " + e.getMessage();
-        }
+            while ((line = r.readLine()) != null) {
+                if (isMiuiNoise(line)) continue;
+                sb.append(line).append("\n");
+            }
+        } catch (IOException e) { return "Error: " + e.getMessage(); }
         return sb.toString();
+    }
+
+    private boolean isMiuiNoise(String line) {
+        if (line == null) return true;
+        String l = line.toLowerCase();
+        return l.contains("miui") || l.contains("wmdebug") || l.contains("forcedark") || l.contains("handwriting")
+                || l.contains("blastbuffer") || l.contains("userscenedetector") || l.contains("vri[")
+                || l.contains("inputeventreceiver") || l.contains("inputtransport");
     }
 
     private void showLogContent(File file) {
         String content = readLog(file);
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle(file.getName());
-        TextView textView = new TextView(this);
-        textView.setText(content);
-        textView.setPadding(24, 24, 24, 24);
-        textView.setTextIsSelectable(true);
-        ScrollView scrollView = new ScrollView(this);
-        scrollView.addView(textView);
-        builder.setView(scrollView);
-        builder.setPositiveButton("Close", null);
-        builder.setNeutralButton("Copy", (d, w) -> {
-            ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-            clipboard.setPrimaryClip(ClipData.newPlainText("log", content));
+        android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(this);
+        b.setTitle(file.getName());
+        TextView tv = new TextView(this);
+        tv.setText(content);
+        tv.setPadding(24, 24, 24, 24);
+        tv.setTextIsSelectable(true);
+        android.widget.ScrollView sv = new android.widget.ScrollView(this);
+        sv.addView(tv);
+        b.setView(sv);
+        b.setPositiveButton("Close", null);
+        b.setNeutralButton("Copy", (d, w) -> {
+            ClipboardManager cb = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            cb.setPrimaryClip(ClipData.newPlainText("log", content));
             Toast.makeText(this, "Copied", Toast.LENGTH_SHORT).show();
         });
-        builder.show();
+        b.show();
     }
 
-    private String formatSize(long bytes) {
-        if (bytes < 1024) return bytes + " B";
-        int exp = (int) (Math.log(bytes) / Math.log(1024));
-        String[] units = {"KB", "MB", "GB"};
-        return String.format(Locale.US, "%.1f %s", bytes / Math.pow(1024, exp), units[exp - 1]);
+    private String fmtSize(long b) {
+        if (b < 1024) return b + " B";
+        int e = (int) (Math.log(b) / Math.log(1024));
+        return String.format(Locale.US, "%.1f %s", b / Math.pow(1024, e), new String[]{"KB","MB","GB"}[e-1]);
     }
 
-    private String formatDate(long timestamp) {
-        return new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date(timestamp));
+    private String fmtDate(long ts) {
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date(ts));
     }
 
-    private class LogEntry {
-        final String name;
-        final long size;
-        final long modified;
-        final File file;
-        LogEntry(String name, long size, long modified, File file) {
-            this.name = name;
-            this.size = size;
-            this.modified = modified;
-            this.file = file;
+    private static class LogEntry {
+        final String name; final long size, modified; final File file;
+        LogEntry(String n, long s, long m, File f) { name=n; size=s; modified=m; file=f; }
+    }
+
+    private class LogAdapter extends RecyclerView.Adapter<LogVH> {
+        private final List<LogEntry> list;
+        LogAdapter(List<LogEntry> list) { this.list = list; }
+        @NonNull @Override public LogVH onCreateViewHolder(@NonNull ViewGroup p, int t) {
+            return new LogVH(LayoutInflater.from(p.getContext()).inflate(R.layout.item_log, p, false));
         }
+        @Override public void onBindViewHolder(@NonNull LogVH h, int pos) {
+            LogEntry e = list.get(pos);
+            h.name.setText(e.name);
+            h.size.setText(fmtSize(e.size));
+            h.date.setText(fmtDate(e.modified));
+            h.itemView.setOnClickListener(v -> showLogContent(e.file));
+            h.share.setOnClickListener(v -> shareLog(e.file));
+        }
+        @Override public int getItemCount() { return list.size(); }
     }
 
-    private class LogAdapter extends RecyclerView.Adapter<LogViewHolder> {
-        private final List<LogEntry> entries;
-        LogAdapter(List<LogEntry> entries) { this.entries = entries; }
-        @NonNull @Override
-        public LogViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_log, parent, false);
-            return new LogViewHolder(v);
-        }
-        @Override
-        public void onBindViewHolder(@NonNull LogViewHolder holder, int position) {
-            LogEntry entry = entries.get(position);
-            holder.name.setText(entry.name);
-            holder.size.setText(formatSize(entry.size));
-            holder.date.setText(formatDate(entry.modified));
-            holder.itemView.setOnClickListener(v -> showLogContent(entry.file));
-            holder.share.setOnClickListener(v -> shareLog(entry.file));
-        }
-        @Override public int getItemCount() { return entries.size(); }
-    }
-
-    private static class LogViewHolder extends RecyclerView.ViewHolder {
+    private static class LogVH extends RecyclerView.ViewHolder {
         final TextView name, size, date;
         final View share;
-        LogViewHolder(View itemView) {
-            super(itemView);
-            name = itemView.findViewById(R.id.log_name);
-            size = itemView.findViewById(R.id.log_size);
-            date = itemView.findViewById(R.id.log_date);
-            share = itemView.findViewById(R.id.log_share);
-        }
+        LogVH(View v) { super(v); name=v.findViewById(R.id.log_name); size=v.findViewById(R.id.log_size); date=v.findViewById(R.id.log_date); share=v.findViewById(R.id.log_share); }
     }
 }

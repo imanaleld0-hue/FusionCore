@@ -132,6 +132,7 @@
                     android:pathPrefix="/callback" />
             </intent-filter>
         </activity>
+
         
         <activity
             android:name="dev.allofus.fusioncore.LogsActivity"

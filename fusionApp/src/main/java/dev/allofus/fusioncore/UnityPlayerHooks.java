@@ -2,7 +2,10 @@ package dev.allofus.fusioncore;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Build;
 import android.util.Log;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -13,7 +16,7 @@ import top.canyie.pine.callback.MethodHook;
 
 public class UnityPlayerHooks {
 
-    public static String TAG = "UnityPlayerHooks";
+    public static final String TAG = "UnityPlayerHooks";
 
     public static final String[] UnityPlayerClassNames = new String[] {
             "com.unity3d.player.UnityPlayer",
@@ -21,108 +24,195 @@ public class UnityPlayerHooks {
             "com.unity3d.player.UnityPlayerForActivityOrService"
     };
 
-    // this is used to inject CustomContextWrapper into the game activity
+    // Inject CustomContextWrapper into the UnityPlayer constructor.
     public static void installHooks(Context gameContext) {
-        var classLoader = gameContext.getClassLoader();
+        ClassLoader classLoader = gameContext.getClassLoader();
+
         if (classLoader == null) {
             throw new IllegalStateException("ClassLoader is null");
         }
 
-        // get constructor
         ArrayList<Constructor<?>> constructors = new ArrayList<>();
         Class<?> unityPlayerClass = null;
+
+        // Find the UnityPlayer implementation used by this Unity version.
         for (String className : UnityPlayerClassNames) {
             try {
-                // Try to load the candidate UnityPlayer class name from the game's classloader.
                 Class<?> c = classLoader.loadClass(className);
+
                 Log.i(TAG, "========== UNITY CLASS FOUND ==========");
                 Log.i(TAG, "Class: " + c.getName());
                 Log.i(TAG, "Loader: " + c.getClassLoader());
 
-                // remember the class and collect constructors that take a Context/Activity as the first parameter
                 unityPlayerClass = c;
+
                 for (Constructor<?> cons : c.getDeclaredConstructors()) {
                     Class<?>[] params = cons.getParameterTypes();
-                    if (params.length > 0 && (Context.class.isAssignableFrom(params[0]) || Activity.class.isAssignableFrom(params[0]))) {
+
+                    if (params.length > 0 &&
+                            (Context.class.isAssignableFrom(params[0])
+                                    || Activity.class.isAssignableFrom(params[0]))) {
+
                         cons.setAccessible(true);
                         constructors.add(cons);
+
                         Log.d(TAG, "Found candidate constructor: " + cons);
                     }
                 }
 
-                // if we found any usable constructors for this class, stop searching further names
                 if (!constructors.isEmpty()) {
                     break;
                 }
+
             } catch (Throwable e) {
-                Log.e(TAG, "========== UNITY CLASS NOT FOUND ==========", e);
+                Log.e(TAG,
+                        "========== UNITY CLASS NOT FOUND: "
+                                + className + " ==========",
+                        e);
             }
         }
 
         if (unityPlayerClass == null || constructors.isEmpty()) {
-            throw new IllegalStateException("Failed to find UnityPlayer class or constructor");
+            throw new IllegalStateException(
+                    "Failed to find UnityPlayer class or constructor"
+            );
         }
 
         Log.i(TAG, "Found UnityPlayer class: " + unityPlayerClass.getName());
 
+        /*
+         * Find a static Activity field inside UnityPlayer.
+         *
+         * getFields() only returns public fields. Keep the existing behavior
+         * for now because this is enough for the current Unity build.
+         */
         ArrayList<Field> activityFields = new ArrayList<>();
+
         for (Field field : unityPlayerClass.getFields()) {
             if (Activity.class.isAssignableFrom(field.getType())) {
-                field.setAccessible(true);
+                try {
+                    field.setAccessible(true);
+                } catch (Throwable ignored) {
+                }
+
                 activityFields.add(field);
                 break;
             }
         }
 
         for (Constructor<?> constructor : constructors) {
+
             Log.i(TAG, "Hooking constructor: " + constructor);
+
             Pine.hook(constructor, new MethodHook() {
-                Activity activity = null;
+
+                private Activity activity = null;
 
                 @Override
                 public void beforeCall(Pine.CallFrame callFrame) {
                     try {
-                        if (callFrame.args[0] == null || !(callFrame.args[0] instanceof Activity)) {
-                            Log.w(TAG, "First argument is not a Activity, skipping hook");
+                        if (callFrame.args.length == 0
+                                || callFrame.args[0] == null
+                                || !(callFrame.args[0] instanceof Activity)) {
+
+                            Log.w(
+                                    TAG,
+                                    "First argument is not an Activity, skipping hook"
+                            );
                             return;
                         }
-                        // In UnityPlayerHooks beforeCall:
-                        Log.i("UnityPlayerHooks", "Constructor firing, context class: "
-                                + callFrame.args[0].getClass().getName());
-                        activity = (Activity) callFrame.args[0];
-                        callFrame.args[0] = new CustomContextWrapper(gameContext, activity, activity);
-                    } catch (Exception e) {
-                        Log.i(TAG, "Failed to wrap context!", e);
+
+                        Activity originalActivity =
+                                (Activity) callFrame.args[0];
+
+                        Log.i(
+                                TAG,
+                                "Constructor firing, context class: "
+                                        + originalActivity.getClass().getName()
+                        );
+
+                        activity = originalActivity;
+
+                        callFrame.args[0] =
+                                new CustomContextWrapper(
+                                        gameContext,
+                                        activity,
+                                        activity
+                                );
+
+                    } catch (Throwable e) {
+                        Log.e(TAG, "Failed to wrap context!", e);
                     }
                 }
 
                 @Override
                 public void afterCall(Pine.CallFrame callFrame) {
+
                     if (activity == null) {
                         return;
                     }
-                
-                       activity.getWindow().setDecorFitsSystemWindows(false);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        WindowInsetsController c = activity.getWindow().getInsetsController();
-                        if (c != null) {
-                            c.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-                            c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-        }
-    }
-    
-                }
-                    
-                    for (Field field : activityFields) {
-                        try {
-                            Log.i(TAG, "Setting activity field: " + field.getName());
-                            field.set(callFrame.thisObject, activity);
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException("Failed to set activity field: " + field.getName(), e);
+
+                    try {
+                        /*
+                         * Hide Android system bars.
+                         *
+                         * Unity itself may later modify these flags, so this
+                         * is intentionally done after the constructor returns.
+                         */
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+
+                            activity.getWindow()
+                                    .setDecorFitsSystemWindows(false);
+
+                            WindowInsetsController controller =
+                                    activity.getWindow()
+                                            .getInsetsController();
+
+                            if (controller != null) {
+
+                                controller.hide(
+                                        WindowInsets.Type.statusBars()
+                                                | WindowInsets.Type.navigationBars()
+                                );
+
+                                controller.setSystemBarsBehavior(
+                                        WindowInsetsController
+                                                .BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                                );
+                            }
                         }
+
+                        /*
+                         * Restore the Activity reference expected by Unity.
+                         */
+                        for (Field field : activityFields) {
+                            try {
+                                Log.i(
+                                        TAG,
+                                        "Setting activity field: "
+                                                + field.getName()
+                                );
+
+                                field.set(callFrame.thisObject, activity);
+
+                            } catch (IllegalAccessException e) {
+                                throw new RuntimeException(
+                                        "Failed to set activity field: "
+                                                + field.getName(),
+                                        e
+                                );
+                            }
+                        }
+
+                    } catch (Throwable e) {
+                        Log.e(
+                                TAG,
+                                "Failed during UnityPlayer constructor hook",
+                                e
+                        );
                     }
                 }
             });
         }
     }
-}
+                            }

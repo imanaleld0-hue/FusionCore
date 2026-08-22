@@ -101,7 +101,18 @@ public class UnityPlayerHooks {
                     if (activity == null) {
                         return;
                     }
-
+                
+                       activity.getWindow().setDecorFitsSystemWindows(false);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        WindowInsetsController c = activity.getWindow().getInsetsController();
+                        if (c != null) {
+                            c.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+                            c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        }
+    }
+    
+                }
+                    
                     for (Field field : activityFields) {
                         try {
                             Log.i(TAG, "Setting activity field: " + field.getName());

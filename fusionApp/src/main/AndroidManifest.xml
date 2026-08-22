@@ -71,7 +71,7 @@
     android:name="dev.allofus.fusioncore.SelectorActivity"
     android:theme="@style/UnityThemeSelector"
     android:exported="true"
-    android:screenOrientation="landscape">
+    android:screenOrientation="portrait">
     
     <intent-filter>
         <action android:name="android.intent.action.MAIN" />

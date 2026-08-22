@@ -10,7 +10,6 @@ import android.widget.EditText;
 import android.widget.Toast;
 import dev.allofus.fusioncore.auth.AuthIntentParser;
 import dev.allofus.fusioncore.auth.AuthManager;
-import dev.allofus.fusioncore.auth.InnerslothAuthData;
 
 public class AuthBottomSheet extends DialogFragment {
     public static AuthBottomSheet newInstance() {
@@ -35,13 +34,23 @@ public class AuthBottomSheet extends DialogFragment {
         });
         v.findViewById(R.id.auth_submit).setOnClickListener(btn -> {
             String text = input.getText().toString().trim();
-            if (text.isEmpty()) { Toast.makeText(getActivity(), "Введите ссылку", Toast.LENGTH_SHORT).show(); return; }
-            InnerslothAuthData d = AuthIntentParser.parseRawText(text);
-            if (d != null) {
-                AuthManager.getInstance(requireContext()).setAuth(d);
-                Toast.makeText(getActivity(), "Авторизован: " + d.name, Toast.LENGTH_SHORT).show();
-                dismiss(); if (onAuthResult != null) onAuthResult.run();
-            } else Toast.makeText(getActivity(), "Невалидная ссылка", Toast.LENGTH_LONG).show();
+            AuthIntentParser.AuthResult d = AuthIntentParser.parseRawText(text);
+            if (d != null && d.isValid()) {
+            AuthManager.getInstance(requireContext()).setAuth(
+            d.token,
+            d.mergeId,
+            d.store,
+            86400000L
+            );
+
+            Toast.makeText(getActivity(), "Authorization saved", Toast.LENGTH_SHORT).show();
+            dismiss();
+   
+            if (onAuthResult != null) {
+            onAuthResult.run();
+}
+}
+            } else Toast.makeText(getActivity(), "Invalid link", Toast.LENGTH_LONG).show();
         });
         v.findViewById(R.id.auth_cancel).setOnClickListener(btn -> dismiss());
         return v;

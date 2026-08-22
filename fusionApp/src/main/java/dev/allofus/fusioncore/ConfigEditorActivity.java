@@ -78,6 +78,17 @@ public class ConfigEditorActivity extends Activity {
         b.show();
     }
 
+    private void deleteConfig(File f) {
+        new AlertDialog.Builder(this)
+            .setTitle("Delete " + f.getName() + "?")
+            .setPositiveButton("Delete", (d, w) -> {
+                if (f.delete()) { Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show(); refresh(); }
+                else Toast.makeText(this, "Delete failed", Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
     private class ConfigAdapter extends RecyclerView.Adapter<ConfigVH> {
         private final List<File> files;
         ConfigAdapter(List<File> files) { this.files = files; }
@@ -88,6 +99,7 @@ public class ConfigEditorActivity extends Activity {
             File f = files.get(pos);
             h.name.setText(f.getName());
             h.itemView.setOnClickListener(v -> editFile(f));
+            h.itemView.setOnLongClickListener(v -> { deleteConfig(f); return true; });
         }
         @Override public int getItemCount() { return files.size(); }
     }

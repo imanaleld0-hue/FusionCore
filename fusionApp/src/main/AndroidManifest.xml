@@ -115,7 +115,7 @@
                     android:pathPrefix="/callback" />
             </intent-filter>
         </activity>
-
+        
         <activity
             android:name="dev.allofus.fusioncore.BootstrapActivity"
             android:theme="@style/UnityThemeSelector"
@@ -132,7 +132,12 @@
                     android:pathPrefix="/callback" />
             </intent-filter>
         </activity>
-
+        
+        <activity
+            android:name="dev.allofus.fusioncore.LogsActivity"
+            android:theme="@style/UnityThemeSelector"
+            android:exported="false" />
+        
         <activity
             android:name="dev.allofus.fusioncore.SettingsActivity"
             android:theme="@style/UnityThemeSelector"

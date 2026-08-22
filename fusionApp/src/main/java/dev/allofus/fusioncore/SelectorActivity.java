@@ -2,7 +2,6 @@ package dev.allofus.fusioncore;
 
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -17,8 +16,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import dev.allofus.fusioncore.bridge.ActivityBridge;
 
 public class SelectorActivity extends AppCompatActivity {
@@ -26,7 +23,7 @@ public class SelectorActivity extends AppCompatActivity {
     private static final int REQ_STORAGE = 1001;
     private static final String TARGET_PKG = "com.innersloth.spacemafia";
     private String pendingPkg;
-    private View cardGame, cardMods, cardDiag, cardLogs, cardGitHub, btnSettings, btnLaunch;
+    private View cardGame, cardMods, cardConfigs, cardLogs, cardGitHub, btnSettings, btnLaunch;
     private TextView gameName, gamePkg;
     private ImageView gameIcon;
 
@@ -71,7 +68,7 @@ public class SelectorActivity extends AppCompatActivity {
     private void findViews() {
         cardGame = findViewById(R.id.card_game);
         cardMods = findViewById(R.id.card_mods);
-        cardDiag = findViewById(R.id.card_diagnostics);
+        cardConfigs = findViewById(R.id.card_configs);
         cardLogs = findViewById(R.id.card_logs);
         cardGitHub = findViewById(R.id.card_github);
         gameIcon = findViewById(R.id.game_icon);
@@ -85,12 +82,9 @@ public class SelectorActivity extends AppCompatActivity {
         if (btnLaunch != null) btnLaunch.setOnClickListener(v -> maybeLaunch(TARGET_PKG));
         if (btnSettings != null) btnSettings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
         if (cardMods != null) cardMods.setOnClickListener(v -> startActivity(new Intent(this, ModManagerActivity.class)));
-        if (cardDiag != null) cardDiag.setOnClickListener(v -> startActivity(new Intent(this, ConfigEditorActivity.class)));
+        if (cardConfigs != null) cardConfigs.setOnClickListener(v -> startActivity(new Intent(this, ConfigEditorActivity.class)));
         if (cardLogs != null) cardLogs.setOnClickListener(v -> startActivity(new Intent(this, LogsActivity.class)));
-        if (cardGitHub != null) cardGitHub.setOnClickListener(v -> {
-            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/imanaleld0-hue/FusionCore"));
-            startActivity(i);
-        });
+        if (cardGitHub != null) cardGitHub.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/imanaleld0-hue/FusionCore"))));
     }
 
     private void loadGameInfo() {

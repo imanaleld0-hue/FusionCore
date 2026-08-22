@@ -57,7 +57,7 @@ public class SelectorActivity extends AppCompatActivity {
 
     private TextView gameName;
     private TextView gamePkg;
-    private Viev btnSettings;
+    private View btnSettings;
     private View btnLaunch;
     private View btnSelect;
 

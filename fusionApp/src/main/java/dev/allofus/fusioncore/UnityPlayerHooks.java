@@ -34,7 +34,6 @@ public class UnityPlayerHooks {
         ArrayList<Constructor<?>> constructors = new ArrayList<>();
         Class<?> unityPlayerClass = null;
 
-        // Find the UnityPlayer implementation used by this Unity version.
         for (String className : UnityPlayerClassNames) {
             try {
                 Class<?> c = classLoader.loadClass(className);

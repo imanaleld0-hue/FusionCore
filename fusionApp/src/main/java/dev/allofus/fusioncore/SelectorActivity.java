@@ -57,7 +57,7 @@ public class SelectorActivity extends AppCompatActivity {
 
     private TextView gameName;
     private TextView gamePkg;
-
+    private Viev btnSettings;
     private View btnLaunch;
     private View btnSelect;
 
@@ -187,7 +187,7 @@ public class SelectorActivity extends AppCompatActivity {
 
         authStatus = findViewById(R.id.auth_status_text);
         authName = findViewById(R.id.auth_user_name);
-        btnSettings = findViewById(R.id.btn_settings);
+        
         
         gameIcon = findViewById(R.id.game_icon);
 

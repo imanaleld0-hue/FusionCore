@@ -10,20 +10,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="20dp"
+        android:paddingTop="48dp">
 
-        <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
-
             <ImageView
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:src="@mipmap/app_icon" />
-
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -33,7 +31,6 @@
                 android:textColor="@color/fc_text_primary"
                 android:textSize="24sp"
                 android:textStyle="bold" />
-
             <ImageView
                 android:id="@+id/btn_settings"
                 android:layout_width="40dp"
@@ -51,166 +48,70 @@
             android:textColor="@color/fc_text_secondary"
             android:textSize="14sp" />
 
-        <!-- Auth Card -->
         <androidx.cardview.widget.CardView
-            android:id="@+id/card_auth"
+            android:id="@+id/card_game"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             app:cardBackgroundColor="@color/fc_card_bg"
             app:cardCornerRadius="16dp"
-            app:cardElevation="4dp"
-            android:foreground="?attr/selectableItemBackground"
-            android:clickable="true"
-            android:focusable="true">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="16dp"
-                android:gravity="center_vertical">
-
-                <View
-                    android:id="@+id/auth_status_dot"
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:background="@drawable/dot_red" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:layout_marginStart="12dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/auth_title"
-                        android:textColor="@color/fc_text_primary"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/auth_status_text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/auth_status_disconnected"
-                        android:textColor="@color/fc_text_secondary"
-                        android:textSize="13sp" />
-
-                    <TextView
-                        android:id="@+id/auth_user_name"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/fc_accent"
-                        android:textSize="13sp"
-                        android:visibility="gone" />
-                </LinearLayout>
-
-                <ImageView
-                    android:id="@+id/auth_action_button"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_arrow_right"
-                    android:background="?attr/selectableItemBackgroundBorderless" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Game Card -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/card_game"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="@color/fc_card_bg"
-            app:cardCornerRadius="16dp"
             app:cardElevation="4dp">
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="16dp">
-
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/game_runtime"
+                    android:text="Game"
                     android:textColor="@color/fc_text_primary"
                     android:textSize="16sp"
                     android:textStyle="bold" />
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:layout_marginTop="12dp"
                     android:gravity="center_vertical">
-
                     <ImageView
                         android:id="@+id/game_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:src="@mipmap/app_icon" />
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:orientation="vertical"
                         android:layout_marginStart="12dp">
-
                         <TextView
                             android:id="@+id/game_name"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/game_select_prompt"
+                            android:text="Among Us"
                             android:textColor="@color/fc_text_primary"
                             android:textSize="15sp" />
-
                         <TextView
                             android:id="@+id/game_package"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/game_select_subtitle"
+                            android:text="com.innersloth.spacemafia"
                             android:textColor="@color/fc_text_secondary"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
-
-                <LinearLayout
+                <Button
+                    android:id="@+id/launch_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="12dp">
-
-                    <Button
-                        android:id="@+id/select_game_button"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/select_game"
-                        android:textColor="@color/fc_text_secondary"
-                        app:strokeColor="@color/fc_card_border" />
-
-                    <Button
-                        android:id="@+id/launch_button"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/launch"
-                        android:backgroundTint="@color/fc_button_primary"
-                        android:textColor="@android:color/white" />
-                </LinearLayout>
+                    android:layout_marginTop="12dp"
+                    android:text="Launch"
+                    android:backgroundTint="@color/fc_button_primary"
+                    android:textColor="@android:color/white" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Mods Card -->
         <androidx.cardview.widget.CardView
             android:id="@+id/card_mods"
             android:layout_width="match_parent"
@@ -222,32 +123,17 @@
             android:foreground="?attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true">
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🧩"
-                    android:textSize="28sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:text="@string/mods"
-                    android:textColor="@color/fc_text_primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#9881;" android:textSize="28sp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:text="Mods" android:textColor="@color/fc_text_primary" android:textSize="15sp" android:textStyle="bold" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Diagnostics Card -->
         <androidx.cardview.widget.CardView
             android:id="@+id/card_diagnostics"
             android:layout_width="match_parent"
@@ -259,32 +145,17 @@
             android:foreground="?attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true">
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🛠"
-                    android:textSize="28sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:text="@string/diagnostics"
-                    android:textColor="@color/fc_text_primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#128221;" android:textSize="28sp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:text="Configs" android:textColor="@color/fc_text_primary" android:textSize="15sp" android:textStyle="bold" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Logs Card -->
         <androidx.cardview.widget.CardView
             android:id="@+id/card_logs"
             android:layout_width="match_parent"
@@ -296,35 +167,37 @@
             android:foreground="?attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true">
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:padding="16dp"
                 android:gravity="center_vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#128203;" android:textSize="24sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="12dp" android:text="Logs" android:textColor="@color/fc_text_primary" android:textSize="15sp" android:textStyle="bold" />
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_arrow_right" app:tint="@color/fc_text_secondary" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📋"
-                    android:textSize="24sp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:text="@string/logs"
-                    android:textColor="@color/fc_text_primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_arrow_right"
-                    app:tint="@color/fc_text_secondary" />
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_github"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="@color/fc_card_bg"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            android:foreground="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#128187;" android:textSize="28sp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:text="GitHub" android:textColor="@color/fc_text_primary" android:textSize="15sp" android:textStyle="bold" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -338,4 +211,3 @@
             android:textSize="12sp" />
     </LinearLayout>
 </ScrollView>
-            

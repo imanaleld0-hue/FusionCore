@@ -4,11 +4,15 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.view.WindowManager
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.content.pm.ActivityInfo;
@@ -115,18 +119,9 @@ public class BootstrapActivity extends Activity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-
-        if (ActivityBridge.handleGooglePlayMergeIntent(intent)) {
-            Log.i(TAG, "Auth intent обработан в onNewIntent");
-        }
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
         
         if (ActivityBridge.handleGooglePlayMergeIntent(intent)) {
-            Log.i(TAG, "Auth intent обработан в onNewIntent");
+            Log.i(TAG, "Auth intent processed in NewIntent");
         }
     }
 

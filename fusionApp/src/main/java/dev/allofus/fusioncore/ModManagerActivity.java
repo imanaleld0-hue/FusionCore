@@ -1,6 +1,9 @@
 package dev.allofus.fusioncore;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.LayoutInflater;
@@ -26,9 +29,28 @@ public class ModManagerActivity extends Activity {
         recycler = findViewById(R.id.mod_recycler);
         recycler.setLayoutManager(new LinearLayoutManager(this));
         findViewById(R.id.mod_back).setOnClickListener(v -> finish());
+        findViewById(R.id.mod_add).setOnClickListener(v -> openFilePicker());
         File sd = Environment.getExternalStorageDirectory();
         pluginsDir = new File(new File(sd, "FusionCore/com.innersloth.spacemafia/BepInEx/plugins"), "");
         refresh();
+    }
+
+    private void openFilePicker() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("*/*");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        try { startActivityForResult(Intent.createChooser(intent, "Select DLL"), 1002); }
+        catch (Exception e) { Toast.makeText(this, "No file picker found", Toast.LENGTH_SHORT).show(); }
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1002 && resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();
+            if (uri != null) {
+                Toast.makeText(this, "Copy file to BepInEx/plugins manually", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     private void refresh() {
@@ -58,6 +80,21 @@ public class ModManagerActivity extends Activity {
         }
     }
 
+    private void deleteMod(ModEntry entry) {
+        new AlertDialog.Builder(this)
+            .setTitle("Delete " + entry.name + "?")
+            .setPositiveButton("Delete", (d, w) -> {
+                if (entry.file.delete()) {
+                    Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
+                    refresh();
+                } else {
+                    Toast.makeText(this, "Delete failed", Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
     private static class ModEntry {
         String name;
         boolean enabled;
@@ -78,6 +115,7 @@ public class ModManagerActivity extends Activity {
             h.name.setText(e.name);
             h.sw.setChecked(e.enabled);
             h.sw.setOnCheckedChangeListener((btn, checked) -> toggleMod(e, checked));
+            h.itemView.setOnLongClickListener(v -> { deleteMod(e); return true; });
         }
         @Override public int getItemCount() { return list.size(); }
     }

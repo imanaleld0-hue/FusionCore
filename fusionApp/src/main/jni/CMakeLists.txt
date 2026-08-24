@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.31.1)
 project(unityLibrary CXX)
-
+target_link_options(${PROJECT_NAME} PRIVATE "-Wl,-z,max-page-size=16384")
 add_subdirectory(main)
 add_subdirectory(fusion)

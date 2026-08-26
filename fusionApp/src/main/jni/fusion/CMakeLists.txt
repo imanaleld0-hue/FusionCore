@@ -3,7 +3,6 @@ project(fusion)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(LIB_FOLDER ${CMAKE_SOURCE_DIR}/../jniLibs/${CMAKE_ANDROID_ARCH_ABI})
-target_link_options(${PROJECT_NAME} PRIVATE "-Wl,-z,max-page-size=16384")
 
 find_package(JNI REQUIRED)
 find_package(xdl REQUIRED CONFIG)

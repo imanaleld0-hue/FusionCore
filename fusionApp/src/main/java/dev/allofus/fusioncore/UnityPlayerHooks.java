@@ -1,4 +1,4 @@
-package dev.allofus.fusioncore.hooks;
+package dev.allofus.fusioncore;
 
 import android.app.Activity;
 import android.content.Context;

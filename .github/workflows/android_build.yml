@@ -2,7 +2,14 @@ name: Android Build
 
 on:
   workflow_dispatch:
-
+  push:
+    branches:
+      - main 
+      
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: true
+  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -42,8 +49,9 @@ jobs:
       env:
         ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.1.8937393
 
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
+    - name: Upload APK directly (,,
+      uses: actions/upload-artifact@v7 
       with:
-        name: fusionApp-debug
-        path: fusionApp/build/outputs/apk/debug/fusionApp-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk 
+          archive: false
+          

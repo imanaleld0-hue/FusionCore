@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="General">
+        <SwitchPreferenceCompat
+            app:key="pref_fullscreen"
+            app:title="Fullscreen"
+            app:defaultValue="true"/>
+        <SwitchPreferenceCompat
+            app:key="pref_keep_screen_on"
+            app:title="Keep Screen On"
+            app:defaultValue="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Game">
+        <EditTextPreference
+            app:key="pref_game_package"
+            app:title="Target Package"
+            app:defaultValue="com.innersloth.spacemafia"/>
+        <SwitchPreferenceCompat
+            app:key="pref_auto_launch"
+            app:title="Auto Launch"
+            app:defaultValue="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Plugins">
+        <SwitchPreferenceCompat
+            app:key="pref_enable_bepinex"
+            app:title="Enable BepInEx"
+            app:defaultValue="true"/>
+        <Preference
+            app:key="pref_plugin_dir"
+            app:title="Plugin Directory"
+            app:summary="Manage plugin directories"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Files">
+        <Preference
+            app:key="pref_clear_cache"
+            app:title="Clear Cache"
+            app:summary="Clear temporary build files"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Logs">
+        <SwitchPreferenceCompat
+            app:key="pref_enable_logging"
+            app:title="Enable Logging"
+            app:defaultValue="true"/>
+        <Preference
+            app:key="pref_export_logs"
+            app:title="Export Logs"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Advanced">
+        <SwitchPreferenceCompat
+            app:key="pref_debug_mode"
+            app:title="Debug Mode"
+            app:defaultValue="false"/>
+        <EditTextPreference
+            app:key="pref_custom_args"
+            app:title="Custom Launch Arguments"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="About">
+        <Preference
+            app:key="pref_version"
+            app:title="Version"
+            app:summary="1.0.0"/>
+        <Preference
+            app:key="pref_licenses"
+            app:title="Open Source Licenses"/>
+    </PreferenceCategory>
+</PreferenceScreen>

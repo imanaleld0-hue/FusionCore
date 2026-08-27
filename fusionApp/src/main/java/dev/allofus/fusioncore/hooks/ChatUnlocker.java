@@ -17,7 +17,7 @@ public class ChatUnlocker {
         try {
 
             long libBase =
-                    Il2CppBridge.getLibBase();
+                    0L;
 
             long saveManagerGetChatOffset =
                     0xABC123L;

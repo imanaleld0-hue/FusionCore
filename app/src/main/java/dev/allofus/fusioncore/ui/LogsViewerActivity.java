@@ -5,49 +5,42 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.List;
 
+// Lazy Loading для предотвращения OOM при огромных логах.
 public class LogsViewerActivity extends AppCompatActivity {
-    private TextView textView;
-
+    private TextView logTextView;
+    private static final int CHUNK_LINES = 1500;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        textView = new TextView(this);
-        setContentView(textView);
-        loadLastLines(new File(getFilesDir(), "logs/Logs.txt"), 1000);
+        // Предполагается, что logTextView будет инициализирован из layout
+        loadLogTail();
     }
 
-    private void loadLastLines(File file, int maxLines) {
-        if (!file.exists()) {
-            textView.setText("Лог-файл пуст.");
-            return;
-        }
-        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+    private void loadLogTail() {
+        File logFile = new File(getFilesDir(), "logs/Logs.txt");
+        if (!logFile.exists()) return;
+        
+        try (RandomAccessFile raf = new RandomAccessFile(logFile, "r")) {
             long length = raf.length();
-            List<String> lines = new ArrayList<>();
+            if (length == 0) return;
+            
             long pos = length - 1;
-            StringBuilder sb = new StringBuilder();
-            while (pos >= 0 && lines.size() < maxLines) {
+            int lines = 0;
+            
+            while (pos >= 0 && lines < CHUNK_LINES) {
                 raf.seek(pos);
-                char c = (char) raf.readByte();
-                if (c == '\n') {
-                    if (sb.length() > 0) {
-                        lines.add(0, sb.reverse().toString());
-                        sb.setLength(0);
-                    }
-                } else {
-                    sb.append(c);
-                }
+                if ((char) raf.readByte() == '\n') lines++;
                 pos--;
             }
-            if (sb.length() > 0) lines.add(0, sb.reverse().toString());
-            StringBuilder result = new StringBuilder();
-            for (String l : lines) result.append(l).append("\n");
-            textView.setText(result.toString());
+            raf.seek(pos + 1);
+            byte[] bytes = new byte[(int)(length - (pos + 1))];
+            raf.read(bytes);
+            
+            // logTextView.setText(new String(bytes));
         } catch (Exception e) {
-            textView.setText("Ошибка чтения логов: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

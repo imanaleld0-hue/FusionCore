@@ -1,191 +1,145 @@
-package dev.allofus.fusioncore;
+package dev.allofus.fusioncore.hooks;
 
 import android.app.Activity;
 import android.content.Context;
 import android.util.Log;
-import android.view.View;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
+import dev.allofus.fusioncore.tools.CustomContextWrapper;
 import top.canyie.pine.Pine;
 import top.canyie.pine.callback.MethodHook;
 
 public class UnityPlayerHooks {
-    public static final String TAG = "UnityPlayerHooks";
 
-    public static final String[] UnityPlayerClassNames = {
-        "com.unity3d.player.UnityPlayer",
-        "com.unity3d.player.UnityPlayerForGameActivity",
-        "com.unity3d.player.UnityPlayerForActivityOrService"
+    public static String TAG = "UnityPlayerHooks";
+
+    public static final String[] UnityPlayerClassNames = new String[] {
+            "com.unity3d.player.UnityPlayer",
+            "com.unity3d.player.UnityPlayerForGameActivity",
+            "com.unity3d.player.UnityPlayerForActivityOrService"
     };
 
-    public static void installHooks(Context gameContext) {
-        ClassLoader classLoader = gameContext.getClassLoader();
+    private static final ThreadLocal<Activity> pendingActivity = new ThreadLocal<>();
 
+    public static void installHooks(Context gameContext) {
+        var classLoader = gameContext.getClassLoader();
         if (classLoader == null) {
             throw new IllegalStateException("ClassLoader is null");
         }
 
+        
         ArrayList<Constructor<?>> constructors = new ArrayList<>();
-
+        Class<?> unityPlayerClass = null;
         for (String className : UnityPlayerClassNames) {
             try {
-                Class<?> clazz = classLoader.loadClass(className);
-
-                Log.i(TAG, "Found Unity class: " + clazz.getName());
-
-                for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
-                    Class<?>[] params = constructor.getParameterTypes();
-
-                    if (params.length > 0 &&
-                        Context.class.isAssignableFrom(params[0])) {
-
-                        constructor.setAccessible(true);
-                        constructors.add(constructor);
-
-                        Log.i(TAG, "Found constructor: " + constructor);
+                unityPlayerClass = classLoader.loadClass(className);
+                for (Constructor<?> ctor : unityPlayerClass.getDeclaredConstructors()) {
+                    if (ctor.getParameterTypes().length >= 1 &&
+                            Context.class.isAssignableFrom(ctor.getParameterTypes()[0])) {
+                        constructors.add(ctor);
                     }
                 }
-
             } catch (ClassNotFoundException e) {
-                Log.d(TAG, "Unity class not found: " + className);
-            } catch (Throwable e) {
-                Log.e(TAG, "Failed inspecting " + className, e);
+                
             }
         }
 
-        if (constructors.isEmpty()) {
-            throw new IllegalStateException(
-                "No compatible UnityPlayer constructors found"
-            );
+        if (unityPlayerClass == null || constructors.isEmpty()) {
+            throw new IllegalStateException("Failed to find UnityPlayer class or constructor");
+        }
+
+        Log.i(TAG, "Found UnityPlayer class: " + unityPlayerClass.getName());
+
+        ArrayList<Field> activityFields = new ArrayList<>();
+        var clazz = unityPlayerClass;
+        while (clazz.getSuperclass() != null) {
+            Log.i(TAG, "Checking class for activity fields: " + clazz.getName());
+            for (Field field : clazz.getDeclaredFields()) {
+                if (field.getType().equals(Activity.class)) {
+                    Log.i(TAG, "Found activity field " + field.getName() + " in class " + clazz.getName());
+                    field.setAccessible(true);
+                    activityFields.add(field);
+                }
+            }
+            clazz = clazz.getSuperclass();
         }
 
         for (Constructor<?> constructor : constructors) {
-            Log.i(TAG, "Hooking Unity constructor: " + constructor);
-
+            Log.i(TAG, "Hooking constructor: " + constructor);
             Pine.hook(constructor, new MethodHook() {
 
                 @Override
                 public void beforeCall(Pine.CallFrame callFrame) {
                     try {
-                        if (callFrame.args == null ||
-                            callFrame.args.length == 0) {
+                        if (callFrame.args[0] == null || !(callFrame.args[0] instanceof Activity activity)) {
+                            Log.w(TAG, "First argument is not a Activity, skipping before hook");
                             return;
                         }
 
-                        Object context = callFrame.args[0];
+                        pendingActivity.set(activity);
 
-                        Log.i(
-                            TAG,
-                            "UnityPlayer constructor: context=" +
-                            (context == null
-                                ? "null"
-                                : context.getClass().getName())
-                        );
+                        
+                        Log.i(TAG, "Constructor firing, context class: "
+                                + callFrame.args[0].getClass().getName());
+                        callFrame.args[0] = new CustomContextWrapper(gameContext, activity, activity);
 
-                        /*
-                         * IMPORTANT:
-                         *
-                         * Не заменяем Context.
-                         * Не изменяем Activity-поля UnityPlayer.
-                         * Не трогаем constructor arguments.
-                         *
-                         * Unity получает свои оригинальные аргументы.
-                         */
-                    } catch (Throwable e) {
-                        Log.e(TAG, "Unity constructor beforeCall failed", e);
+                        Log.i(TAG, "Setting activity fields in before hook!");
+                        for (Field field : activityFields) {
+                            try {
+                                boolean isStatic = Modifier.isStatic(field.getModifiers());
+                                Log.i(TAG, "Setting activity field: " + field.getName() + (isStatic ? " (static)" : ""));
+                                field.set(isStatic ? null : callFrame.thisObject, activity);
+                            } catch (IllegalAccessException e) {
+                                Log.e(TAG, "Failed to set activity field: " + field.getName(), e);
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.i(TAG, "Failed to wrap context!", e);
                     }
                 }
 
                 @Override
                 public void afterCall(Pine.CallFrame callFrame) {
-                    try {
-                        Activity activity = findActivity(callFrame);
+                    Activity activity = pendingActivity.get();
+                    pendingActivity.remove();
 
-                        if (activity == null) {
-                            Log.w(
-                                TAG,
-                                "UnityPlayer created, but Activity was not found"
-                            );
-                            return;
-                        }
-
-                        Log.i(
-                            TAG,
-                            "UnityPlayer created. Applying fullscreen to " +
-                            activity.getClass().getName()
-                        );
-
-                        final Activity targetActivity = activity;
-
-                        targetActivity.runOnUiThread(() -> {
-                            try {
-                                applyFullscreen(targetActivity);
-                            } catch (Throwable e) {
-                                Log.e(
-                                    TAG,
-                                    "Failed to apply fullscreen",
-                                    e
-                                );
+                    if (activity == null) {
+                        
+                        for (Object arg : callFrame.args) {
+                            if (arg instanceof CustomContextWrapper wrapper) {
+                                Context ctx = wrapper.getOriginalActivity();
+                                if (ctx instanceof Activity) {
+                                    activity = (Activity) ctx;
+                                    break;
+                                }
                             }
-                        });
+                            if (arg != null && Activity.class.isAssignableFrom(arg.getClass())) {
+                                activity = (Activity) arg;
+                            }
+                        }
+                    }
 
-                    } catch (Throwable e) {
-                        Log.e(
-                            TAG,
-                            "Unity constructor afterCall failed",
-                            e
-                        );
+                    if (activity == null) {
+                        Log.e(TAG, "Cannot set activity fields: activity is null!");
+                        return;
+                    }
+
+                    Log.i(TAG, "Setting activity fields in after hook!");
+                    for (Field field : activityFields) {
+                        try {
+                            boolean isStatic = Modifier.isStatic(field.getModifiers());
+                            Log.i(TAG, "Setting activity field: " + field.getName() + (isStatic ? " (static)" : ""));
+                            field.set(isStatic ? null : callFrame.thisObject, activity);
+                        } catch (IllegalAccessException e) {
+                            Log.e(TAG, "Failed to set activity field: " + field.getName(), e);
+                        }
                     }
                 }
             });
         }
-
-        Log.i(
-            TAG,
-            "UnityPlayer hooks installed: " + constructors.size()
-        );
     }
-
-    private static Activity findActivity(Pine.CallFrame callFrame) {
-        try {
-            if (callFrame.args == null) {
-                return null;
-            }
-
-            for (Object arg : callFrame.args) {
-                if (arg instanceof Activity) {
-                    return (Activity) arg;
-                }
-            }
-
-        } catch (Throwable e) {
-            Log.e(TAG, "Failed to find Activity", e);
-        }
-
-        return null;
-    }
-
-    private static void applyFullscreen(Activity activity) {
-        if (activity == null || activity.isFinishing()) {
-            return;
-        }
-
-        View decorView = activity
-            .getWindow()
-            .getDecorView();
-
-        int flags =
-            View.SYSTEM_UI_FLAG_FULLSCREEN
-            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
-
-        decorView.setSystemUiVisibility(flags);
-
-        Log.i(TAG, "Fullscreen mode applied");
-    }
-}
+                                }

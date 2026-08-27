@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Тема для StubActivity (наша обертка) -->
     <style name="StubActivityTheme" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
@@ -10,7 +9,6 @@
         <item name="android:windowTranslucentNavigation">true</item>
     </style>
 
-    <!-- Тема для Unity-активностей, требуемая манифестом -->
     <style name="UnityThemeSelector" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>

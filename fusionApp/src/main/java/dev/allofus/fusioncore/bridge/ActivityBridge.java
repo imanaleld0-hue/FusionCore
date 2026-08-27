@@ -14,9 +14,6 @@ import android.util.Log;
 import android.widget.Toast;
 import androidx.browser.customtabs.CustomTabsIntent;
 import java.lang.ref.WeakReference;
-import dev.allofus.fusioncore.auth.AuthIntentParser;
-import dev.allofus.fusioncore.auth.AuthManager;
-import dev.allofus.fusioncore.auth.InnerslothAuthData;
 
 public class ActivityBridge {
     public static boolean handleGooglePlayMergeIntent(Intent intent) {

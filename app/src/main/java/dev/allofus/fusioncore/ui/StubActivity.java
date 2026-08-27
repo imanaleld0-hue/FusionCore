@@ -13,6 +13,7 @@ public class StubActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        dev.allofus.fusioncore.ui.FullscreenHelper.applyImmersiveMode(this);
         setupSafeFullscreen();
         // Запуск Unity и нативных компонентов (сохраняем оригинальную цепочку)
     }

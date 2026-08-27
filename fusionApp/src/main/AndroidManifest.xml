@@ -63,5 +63,6 @@
     <activity android:name=".ui.LogsViewerActivity" android:theme="@style/StubActivityTheme" />
 <activity android:name=".ui.ConfigEditorActivity" android:theme="@style/StubActivityTheme" />
 <activity android:name=".ui.ModMenuActivity" android:theme="@style/StubActivityTheme" />
+        <activity android:name=".ide.MiniIDEActivity" android:exported="false" />
     </application>
 </manifest>

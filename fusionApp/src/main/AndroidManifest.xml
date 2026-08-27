@@ -60,5 +60,8 @@
         <activity android:name="dev.allofus.fusioncore.ConfigEditorActivity" android:theme="@style/UnityThemeSelector" android:exported="false" />
         <activity android:name="dev.allofus.fusioncore.ModManagerActivity" android:theme="@style/UnityThemeSelector" android:exported="false" />
         <activity android:name="dev.allofus.fusioncore.StubActivity" android:theme="@style/UnityThemeSelector" android:screenOrientation="landscape" android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density" android:hardwareAccelerated="true" android:launchMode="singleTask" android:exported="false" />
+    <activity android:name=".ui.LogsViewerActivity" android:theme="@style/StubActivityTheme" />
+<activity android:name=".ui.ConfigEditorActivity" android:theme="@style/StubActivityTheme" />
+<activity android:name=".ui.ModMenuActivity" android:theme="@style/StubActivityTheme" />
     </application>
 </manifest>

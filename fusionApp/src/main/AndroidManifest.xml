@@ -42,7 +42,7 @@
         </provider>
         <activity
             android:name="dev.allofus.fusioncore.SelectorActivity"
-            android:theme="@style/UnityThemeSelector"
+            android:theme="@style/StubActivityTheme"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>

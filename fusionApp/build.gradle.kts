@@ -20,6 +20,7 @@ dependencies {
     implementation("top.canyie.pine:core:0.3.0") 
     implementation("io.github.hexhacking:xdl:2.3.0")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation 'androidx.preference:preference:1.2.1'
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso")

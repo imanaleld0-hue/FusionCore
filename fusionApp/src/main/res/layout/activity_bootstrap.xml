@@ -101,7 +101,15 @@
                 android:textColor="@color/bootstrap_text_secondary"
                 android:textSize="12sp"/>
 
-        </LinearLayout>
+        
+    <Button
+        android:id="@+id/btn_open_ide"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Open Mini IDE"
+        android:layout_margin="8dp" />
+
+</LinearLayout>
 
     </androidx.cardview.widget.CardView>
 
@@ -173,6 +181,14 @@
             android:layout_marginTop="16dp"
             android:text="Retry"/>
 
-    </LinearLayout>
+    
+    <Button
+        android:id="@+id/btn_open_ide"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Open Mini IDE"
+        android:layout_margin="8dp" />
+
+</LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

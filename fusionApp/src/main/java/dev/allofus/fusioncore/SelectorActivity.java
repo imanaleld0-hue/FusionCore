@@ -144,7 +144,7 @@ public class SelectorActivity extends BaseFullscreenActivity {
             result.add(new AppEntry(
                     pkg,
                     label,
-                    pm.getApplicationIcon(pkg),
+                    safeApplicationIcon(pm, pkg),
                     versionName,
                     versionCode
             ));

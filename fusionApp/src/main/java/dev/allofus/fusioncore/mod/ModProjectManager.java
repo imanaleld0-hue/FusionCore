@@ -16,7 +16,7 @@ public class ModProjectManager {
     private final SharedPreferences prefs;
     private final Context context;
 
-    public ModProjectManager(Context context) {
+    public ModProjectManager(Context context) 
         this.context = context.getApplicationContext();
         this.prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }

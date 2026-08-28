@@ -110,7 +110,9 @@ public class SelectorActivity extends BaseFullscreenActivity {
         PackageManager pm = getPackageManager();
         List<AppEntry> result = new ArrayList<>();
         Set<String> seen = new HashSet<>();
-
+        
+        Drawable icon = getPackageManager().getDefaultActivityIcon();
+        
         Intent launchIntent = new Intent(Intent.ACTION_MAIN);
         launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         List<ResolveInfo> activities = pm.queryIntentActivities(launchIntent, PackageManager.MATCH_ALL);

@@ -1,12 +1,16 @@
 package dev.allofus.fusioncore.ui;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -15,6 +19,10 @@ import dev.allofus.fusioncore.R;
 import dev.allofus.fusioncore.build.ModBuilder;
 import dev.allofus.fusioncore.mod.ModProjectManager;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +34,11 @@ public class ModDetailActivity extends BaseFullscreenActivity {
     private RecyclerView recyclerFiles;
     private FileAdapter fileAdapter;
 
+    private final ActivityResultLauncher<String> exportPicker =
+            registerForActivityResult(new ActivityResultContracts.CreateDocument("application/zip"), uri -> {
+                if (uri != null && project != null) performExport(uri);
+            });
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,10 +46,7 @@ public class ModDetailActivity extends BaseFullscreenActivity {
         modId = getIntent().getStringExtra("mod_id");
         projectManager = new ModProjectManager(this);
         project = projectManager.getProject(modId);
-        if (project == null) {
-            finish();
-            return;
-        }
+        if (project == null) { finish(); return; }
 
         TextView tvTitle = findViewById(R.id.tv_title);
         tvTitle.setText(project.name);
@@ -45,12 +55,12 @@ public class ModDetailActivity extends BaseFullscreenActivity {
         MaterialButton btnIde = findViewById(R.id.btn_ide);
         MaterialButton btnBuild = findViewById(R.id.btn_build);
         MaterialButton btnExport = findViewById(R.id.btn_export);
-        recyclerFiles = findViewById(R.id.recycler_files);
+        MaterialButton btnAdd = findViewById(R.id.btn_add_to_mods_list); // добавьте в layout
 
+        recyclerFiles = findViewById(R.id.recycler_files);
         recyclerFiles.setLayoutManager(new LinearLayoutManager(this));
         fileAdapter = new FileAdapter();
         recyclerFiles.setAdapter(fileAdapter);
-
         loadFiles();
 
         btnConfig.setOnClickListener(v -> openConfig());
@@ -60,7 +70,11 @@ public class ModDetailActivity extends BaseFullscreenActivity {
             startActivity(intent);
         });
         btnBuild.setOnClickListener(v -> buildMod());
-        btnExport.setOnClickListener(v -> exportMod());
+        btnExport.setOnClickListener(v -> {
+            if (project == null) return;
+            exportPicker.launch(project.name + "_export.zip");
+        });
+        if (btnAdd != null) btnAdd.setOnClickListener(v -> addToModsList());
     }
 
     private void loadFiles() {
@@ -74,14 +88,8 @@ public class ModDetailActivity extends BaseFullscreenActivity {
         File[] files = dir.listFiles();
         if (files == null) return;
         for (File f : files) {
-            if (f.isDirectory()) {
-                scanDir(f, items, prefix + f.getName() + "/");
-            } else {
-                FileItem item = new FileItem();
-                item.name = prefix + f.getName();
-                item.path = f.getAbsolutePath();
-                items.add(item);
-            }
+            if (f.isDirectory()) scanDir(f, items, prefix + f.getName() + "/");
+            else items.add(new FileItem(prefix + f.getName(), f.getAbsolutePath()));
         }
     }
 
@@ -101,26 +109,48 @@ public class ModDetailActivity extends BaseFullscreenActivity {
         }
     }
 
-    private void exportMod() {
+    private void addToModsList() {
+        ModBuilder builder = new ModBuilder(this);
+        try {
+            File output = builder.build(project);
+            File pluginsDir = new File(Environment.getExternalStorageDirectory(),
+                    "FusionCore/com.innersloth.spacemafia/BepInEx/plugins");
+            pluginsDir.mkdirs();
+            File dest = new File(pluginsDir, output.getName());
+            copyFile(output, dest);
+            Toast.makeText(this, "Added to mods list: " + dest.getName(), Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Add failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void performExport(Uri uri) {
         ModBuilder builder = new ModBuilder(this);
         try {
             File zip = builder.exportToZip(project);
-            Toast.makeText(this, "Exported: " + zip.getAbsolutePath(), Toast.LENGTH_LONG).show();
+            try (InputStream in = new FileInputStream(zip); OutputStream out = getContentResolver().openOutputStream(uri)) {
+                if (out == null) throw new IllegalStateException("Cannot open output stream");
+                byte[] buf = new byte[8192]; int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            }
+            Toast.makeText(this, "Exported successfully", Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Toast.makeText(this, "Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
+    private static void copyFile(File src, File dst) throws Exception {
+        try (FileInputStream in = new FileInputStream(src); FileOutputStream out = new FileOutputStream(dst)) {
+            byte[] buf = new byte[8192]; int n;
+            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+        }
+    }
+
     private class FileAdapter extends RecyclerView.Adapter<FileAdapter.VH> {
         List<FileItem> list = new ArrayList<>();
+        void setItems(List<FileItem> list) { this.list = list; notifyDataSetChanged(); }
 
-        void setItems(List<FileItem> list) {
-            this.list = list;
-            notifyDataSetChanged();
-        }
-
-        @NonNull
-        @Override
+        @NonNull @Override
         public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             return new VH(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_file, parent, false));
         }
@@ -137,23 +167,16 @@ public class ModDetailActivity extends BaseFullscreenActivity {
             });
         }
 
-        @Override
-        public int getItemCount() {
-            return list.size();
-        }
+        @Override public int getItemCount() { return list.size(); }
 
         class VH extends RecyclerView.ViewHolder {
             TextView name;
-
-            VH(View v) {
-                super(v);
-                name = v.findViewById(R.id.tv_name);
-            }
+            VH(View v) { super(v); name = v.findViewById(R.id.tv_name); }
         }
     }
 
     private static class FileItem {
-        String name;
-        String path;
+        String name, path;
+        FileItem(String n, String p) { name = n; path = p; }
     }
-}
+                                }

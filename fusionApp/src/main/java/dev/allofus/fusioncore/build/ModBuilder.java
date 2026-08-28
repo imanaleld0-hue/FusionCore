@@ -752,7 +752,7 @@ public class ModBuilder {
 
         File exact =
                 findFile(
-                        directory,
+                        filez
                         expected
                 );
 
@@ -785,7 +785,7 @@ public class ModBuilder {
                 File result =
                         findPluginDll(
                                 file,
-                            name
+                            pluginName
                         );
 
                 if (result != null) {

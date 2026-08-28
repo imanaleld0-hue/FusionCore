@@ -200,7 +200,7 @@ public class ModDetailActivity extends BaseFullscreenActivity {
         try {
             File output = builder.build(project);
             File pluginsDir = new File(Environment.getExternalStorageDirectory(),
-                    "FusionCore/com.innersloth.spacemafia/BepInEx/plugins");
+                    "FusionCore/com.innersloth.spacemafia/BepInEx/plugins/");
             pluginsDir.mkdirs();
             File dest = new File(pluginsDir, output.getName());
             copyFile(output, dest);

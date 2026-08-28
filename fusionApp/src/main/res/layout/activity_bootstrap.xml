@@ -19,4 +19,5 @@
         android:text="Initializing environment..."
         android:textAppearance="?attr/textAppearanceBodyLarge"
         android:id="@+id/bootstrap_status"/>
+    
 </FrameLayout>

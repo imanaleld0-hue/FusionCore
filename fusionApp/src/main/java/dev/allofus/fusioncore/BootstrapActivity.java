@@ -22,13 +22,14 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import dev.allofus.fusioncore.hooks.ClassLoaderHooks;
-import dev.allofus.fusioncore.hooks.InstrumentationHooks;
-import dev.allofus.fusioncore.hooks.PackageManagerHooks;
-import dev.allofus.fusioncore.tools.FusionConfig;
-import dev.allofus.fusioncore.tools.FusionConfigStore;
-import dev.allofus.fusioncore.tools.NativeLibraryManager;
-import dev.allofus.fusioncore.tools.Utilities;
+import dev.allofus.fusioncore.ClassLoaderHooks;
+import dev.allofus.fusioncore.InstrumentationHooks;
+import dev.allofus.fusioncore.PackageManagerHooks;
+import dev.allofus.fusioncore.FusionConfig;
+import dev.allofus.fusioncore.FusionConfigStore;
+import dev.allofus.fusioncore.NativeLibraryManager;
+import dev.allofus.fusioncore.Utilities;
+import android.view.View;
 
 public class BootstrapActivity extends AppCompatActivity {
     private static final String TAG = "FusionCore";

@@ -178,7 +178,7 @@ public class ModDetailActivity extends BaseFullscreenActivity {
                                         ModDetailActivity.this
                                 )
                                         .setTitle(
-                                                ".NET SDK Installation Failed"
+                                                ".NET SDK Installation Failed!"
                                         )
                                         .setMessage(
                                                 error.getMessage()

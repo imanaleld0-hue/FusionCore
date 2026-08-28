@@ -8,7 +8,8 @@
     <ProgressBar
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"/>
+        android:layout_gravity="center"
+        android:id="@+id/bootstrap_progress"/>
 
     <TextView
         android:layout_width="wrap_content"
@@ -16,5 +17,6 @@
         android:layout_gravity="center|bottom"
         android:layout_marginBottom="64dp"
         android:text="Initializing environment..."
-        android:textAppearance="?attr/textAppearanceBodyLarge"/>
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:id="@+id/bootstrap_status"/>
 </FrameLayout>

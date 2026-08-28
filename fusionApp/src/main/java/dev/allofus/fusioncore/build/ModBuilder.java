@@ -429,7 +429,7 @@ public class ModBuilder {
                                 percent,
                                 "Download .NET SDK..."
                             )
-                              }
+                    }
                 }
             }
         } finally {

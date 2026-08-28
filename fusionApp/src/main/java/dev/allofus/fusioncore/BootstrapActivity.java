@@ -36,7 +36,7 @@ public class BootstrapActivity extends AppCompatActivity {
     public static final String EXTRA_TARGET_PACKAGE = "target_package";
     public static final String EXTRA_USE_ORIGINAL_LIBUNITY = "og_libunity";
     private static final String GLOBAL_METADATA_FILE = "global-metadata.dat";
-
+    public static final String EXTRA_TARGET_ORIENTATION = "fusioncore.target_orientation";
     private final AtomicBoolean fusionInitialized = new AtomicBoolean(false);
     private TextView statusView;
     private ProgressBar spinnerProgress;

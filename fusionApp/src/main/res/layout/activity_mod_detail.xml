@@ -49,15 +49,37 @@
             android:layout_marginStart="8dp"
             android:text="Build"
             style="?attr/materialButtonStyle"/>
+
     </LinearLayout>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_export"
+    <!-- Export / Install -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:text="Export to ZIP"
-        style="?attr/materialButtonOutlinedStyle"/>
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_export"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Export to ZIP"
+            style="?attr/materialButtonOutlinedStyle"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_add_to_mods_list"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Add to Mods"
+            style="?attr/materialButtonStyle"/>
+
+    </LinearLayout>
 
     <TextView
         android:layout_width="wrap_content"
@@ -69,5 +91,7 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_files"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
 </LinearLayout>

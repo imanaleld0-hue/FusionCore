@@ -773,10 +773,7 @@ public class ModBuilder {
         }
         
         File exact =
-                findFile(
-                        files,
-                        expected
-                );
+                findFile(directory, expected);
 
         
         for (File file : files) {
@@ -1201,4 +1198,43 @@ public class ModBuilder {
             );
         }
     }
+    
+    private File findFile(
+            File directory,
+            String expected
+    ) {
+        if (directory == null
+                || !directory.isDirectory()
+                || expected == null) {
+            return null;
+        }
+
+        File[] files = directory.listFiles();
+
+        if (files == null) {
+            return null;
+        }
+
+        for (File file : files) {
+            if (file != null
+                    && file.isFile()
+                    && file.getName().equalsIgnoreCase(expected)) {
+                return file;
+            }
+        }
+
+        for (File file : files) {
+            if (file != null && file.isDirectory()) {
+                File result =
+                        findFile(file, expected);
+
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+
+        return null;
     }
+
+}

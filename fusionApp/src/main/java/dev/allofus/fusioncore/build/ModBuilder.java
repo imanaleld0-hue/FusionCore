@@ -750,12 +750,6 @@ public class ModBuilder {
                 sanitizeDllName(pluginName)
                         .toLowerCase();
 
-        File exact =
-                findFile(
-                        files,
-                        expected
-                );
-
         if (exact != null) {
             return exact;
         }
@@ -777,7 +771,14 @@ public class ModBuilder {
                 return file;
             }
         }
+        
+        File exact =
+                findFile(
+                        files,
+                        expected
+                );
 
+        
         for (File file : files) {
 
             if (file.isDirectory()) {

@@ -1,63 +1,11 @@
 package dev.allofus.fusioncore.ui;
-
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.widget.TextView;
-import android.widget.Toast;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-
+import android.os.*; import android.widget.*; import android.content.*; import android.net.Uri; import dev.allofus.fusioncore.log.FusionLog; import java.io.*; import java.nio.charset.StandardCharsets; import java.util.*;
 public class LogsViewerActivity extends BaseFullscreenActivity {
-    private TextView tvLogs;
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private final List<String> buffer = new ArrayList<>();
-    private Process logcatProcess;
-    private boolean running = true;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        tvLogs = new TextView(this);
-        tvLogs.setTextIsSelectable(true);
-        tvLogs.setPadding(16, 16, 16, 16);
-        tvLogs.setTextSize(12);
-        setContentView(tvLogs);
-        startLogcat();
-    }
-
-    private void startLogcat() {
-        new Thread(() -> {
-            try {
-                logcatProcess = Runtime.getRuntime().exec(new String[]{"logcat", "-v", "threadtime", "-T", "500", "FusionCore:D", "*:S"});
-                BufferedReader br = new BufferedReader(new InputStreamReader(logcatProcess.getInputStream()));
-                String line;
-                while (running && (line = br.readLine()) != null) {
-                    synchronized (buffer) {
-                        buffer.add(line);
-                        if (buffer.size() > 500) buffer.remove(0);
-                    }
-                    handler.post(this::updateUi);
-                }
-            } catch (Exception e) {
-                handler.post(() -> Toast.makeText(this, "Logcat error: " + e.getMessage(), Toast.LENGTH_LONG).show());
-            }
-        }, "logcat-reader").start();
-    }
-
-    private void updateUi() {
-        synchronized (buffer) {
-            StringBuilder sb = new StringBuilder();
-            for (String s : buffer) sb.append(s).append('\n');
-            tvLogs.setText(sb.toString());
-        }
-    }
-
-    @Override protected void onDestroy() {
-        super.onDestroy();
-        running = false;
-        if (logcatProcess != null) logcatProcess.destroy();
-    }
+ private final Handler h=new Handler(Looper.getMainLooper()); private final List<String> lines=new ArrayList<>(); private Process p; private BufferedReader reader; private volatile boolean running; private TextView tv;
+ @Override protected void onCreate(Bundle b){super.onCreate(b);tv=new TextView(this);tv.setTextIsSelectable(true);tv.setPadding(16,16,16,16);tv.setTextSize(12);setContentView(tv);start();}
+ private void start(){running=true;new Thread(()->{try{p=Runtime.getRuntime().exec(new String[]{"logcat","-v","threadtime","-T","500","FusionCore:D","*:S"});reader=new BufferedReader(new InputStreamReader(p.getInputStream(),StandardCharsets.UTF_8));String s;while(running&&(s=reader.readLine())!=null)add(s);}catch(IOException e){if(running)toast("Logcat read error: "+e.getMessage());}catch(Throwable e){if(running)toast("Logcat error: "+e.getMessage());}finally{closeReader();}},"fusion-logcat-reader").start();}
+ private void add(String s){synchronized(lines){lines.add(s);if(lines.size()>1000)lines.remove(0);}try(FileOutputStream o=new FileOutputStream(FusionLog.getLogFile(this),true)){o.write((s+"\n").getBytes(StandardCharsets.UTF_8));}catch(Exception ignored){}h.post(()->{StringBuilder b=new StringBuilder();synchronized(lines){for(String x:lines)b.append(x).append('\n');}if(tv!=null)tv.setText(b.toString());});}
+ private void toast(String s){h.post(()->Toast.makeText(this,s,Toast.LENGTH_LONG).show());} private void closeReader(){try{if(reader!=null)reader.close();}catch(Exception ignored){}reader=null;}
+ @Override protected void onDestroy(){running=false;closeReader();Process x=p;p=null;if(x!=null){try{x.destroy();}catch(Throwable ignored){}try{if(x.isAlive())x.destroyForcibly();}catch(Throwable ignored){}}h.removeCallbacksAndMessages(null);super.onDestroy();}
+ public static void exportLogs(Context c,Uri u)throws Exception{File f=FusionLog.getLogFile(c);try(OutputStream o=c.getContentResolver().openOutputStream(u)){if(o==null)throw new IOException("Cannot open destination");if(f.isFile())try(FileInputStream in=new FileInputStream(f)){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1)o.write(b,0,n);}else o.write("FusionCore log is empty\n".getBytes(StandardCharsets.UTF_8));}}
 }

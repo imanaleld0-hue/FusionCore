@@ -6,10 +6,10 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
@@ -25,6 +25,7 @@ import dev.allofus.fusioncore.mod.ModProjectManager;
 import dev.allofus.fusioncore.mod.ModValidator;
 import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ModProjectsActivity extends BaseFullscreenActivity {
@@ -33,6 +34,7 @@ public class ModProjectsActivity extends BaseFullscreenActivity {
     private ModAdapter adapter;
     private ModProjectManager projectManager;
     private ModValidator validator;
+    private boolean showingExternal = false;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
@@ -57,26 +59,25 @@ public class ModProjectsActivity extends BaseFullscreenActivity {
         adapter = new ModAdapter();
         recyclerView.setAdapter(adapter);
 
+        MaterialButton btnExternal = findViewById(R.id.btn_external_mods);
+        MaterialButton btnMy = findViewById(R.id.btn_my_mods);              
         MaterialButton btnUpload = findViewById(R.id.btn_upload);
         MaterialButton btnCreate = findViewById(R.id.btn_create);
 
+        if (btnExternal != null) btnExternal.setOnClickListener(v -> { showingExternal = true; loadList(); });
+        if (btnMy != null) btnMy.setOnClickListener(v -> { showingExternal = false; loadList(); });
         btnUpload.setOnClickListener(v -> checkPermissionAndPick());
         btnCreate.setOnClickListener(v -> showCreateModDialog());
 
-        loadProjects();
+        showingExternal = false;
+        loadList();
     }
 
     private void checkPermissionAndPick() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            openFilePicker();
-            return;
-        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { openFilePicker(); return; }
         String perm = Manifest.permission.READ_EXTERNAL_STORAGE;
-        if (ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED) {
-            openFilePicker();
-        } else {
-            requestPermissionLauncher.launch(perm);
-        }
+        if (ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED) openFilePicker();
+        else requestPermissionLauncher.launch(perm);
     }
 
     private void openFilePicker() {
@@ -92,33 +93,31 @@ public class ModProjectsActivity extends BaseFullscreenActivity {
             }
             InputStream is = getContentResolver().openInputStream(uri);
             if (is == null) throw new IllegalStateException("Cannot open stream");
-            File modsDir = new File(getFilesDir(), "mods");
-            modsDir.mkdirs();
-            File target = new File(modsDir, name);
+
+            File pluginsDir = new File(Environment.getExternalStorageDirectory(),
+                    "FusionCore/com.innersloth.spacemafia/BepInEx/plugins");
+            pluginsDir.mkdirs();
+            File target = new File(pluginsDir, name);
             copyStream(is, target);
 
             if (name.endsWith(".zip") || name.endsWith(".tar")) {
                 if (!validator.validateArchive(target)) {
-                    Toast.makeText(this, "Archive validation failed (check arm64-v8a compatibility)", Toast.LENGTH_SHORT).show();
-                    target.delete();
-                    return;
+                    Toast.makeText(this, "Archive validation failed", Toast.LENGTH_SHORT).show();
+                    target.delete(); return;
                 }
             }
-
-            projectManager.addProject(name.replaceAll("\\.[^.]+$", ""), target.getAbsolutePath());
-            loadProjects();
-            Toast.makeText(this, "Mod uploaded successfully", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "External mod added: " + name, Toast.LENGTH_SHORT).show();
+            if (showingExternal) loadList();
         } catch (Exception e) {
             Toast.makeText(this, "Upload error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
     private void copyStream(InputStream is, File target) throws Exception {
-        java.io.FileOutputStream fos = new java.io.FileOutputStream(target);
-        byte[] buf = new byte[8192];
-        int n;
-        while ((n = is.read(buf)) > 0) fos.write(buf, 0, n);
-        fos.close();
+        try (java.io.FileOutputStream fos = new java.io.FileOutputStream(target)) {
+            byte[] buf = new byte[8192]; int n;
+            while ((n = is.read(buf)) > 0) fos.write(buf, 0, n);
+        }
         is.close();
     }
 
@@ -154,55 +153,79 @@ public class ModProjectsActivity extends BaseFullscreenActivity {
                         return;
                     }
                     projectManager.createProject(name, version.isEmpty() ? "1.0.0" : version, plugin);
-                    loadProjects();
+                    loadList();
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    private void loadProjects() {
-        adapter.setProjects(projectManager.getProjects());
+    private void loadList() {
+        if (showingExternal) {
+            File pluginsDir = new File(Environment.getExternalStorageDirectory(),
+                    "FusionCore/com.innersloth.spacemafia/BepInEx/plugins");
+            File[] files = pluginsDir.listFiles();
+            List<ModItem> items = new ArrayList<>();
+            if (files != null) {
+                for (File f : files) {
+                    ModItem mi = new ModItem();
+                    mi.name = f.getName();
+                    mi.path = f.getAbsolutePath();
+                    mi.isExternal = true;
+                    items.add(mi);
+                }
+            }
+            adapter.setItems(items);
+        } else {
+            List<ModProjectManager.ModProject> projects = projectManager.getProjects();
+            List<ModItem> items = new ArrayList<>();
+            for (ModProjectManager.ModProject p : projects) {
+                ModItem mi = new ModItem();
+                mi.name = p.name;
+                mi.version = p.version;
+                mi.id = p.id;
+                mi.path = p.path;
+                mi.isExternal = false;
+                items.add(mi);
+            }
+            adapter.setItems(items);
+        }
     }
 
     private class ModAdapter extends RecyclerView.Adapter<ModAdapter.VH> {
-        List<ModProjectManager.ModProject> list;
+        List<ModItem> list = new ArrayList<>();
+        void setItems(List<ModItem> list) { this.list = list; notifyDataSetChanged(); }
 
-        void setProjects(List<ModProjectManager.ModProject> list) {
-            this.list = list;
-            notifyDataSetChanged();
-        }
-
-        @NonNull
-        @Override
+        @NonNull @Override
         public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             return new VH(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_mod_project, parent, false));
         }
 
         @Override
         public void onBindViewHolder(@NonNull VH h, int p) {
-            ModProjectManager.ModProject mod = list.get(p);
-            h.name.setText(mod.name);
-            h.version.setText(mod.version);
+            ModItem mod = list.get(p);
+            h.name.setText(mod.name + (mod.version != null ? " (" + mod.version + ")" : ""));
             h.itemView.setOnClickListener(v -> {
-                Intent intent = new Intent(ModProjectsActivity.this, ModDetailActivity.class);
-                intent.putExtra("mod_id", mod.id);
-                startActivity(intent);
+                if (mod.isExternal) {
+                    Toast.makeText(ModProjectsActivity.this, "External mod: " + mod.name, Toast.LENGTH_SHORT).show();
+                } else {
+                    Intent intent = new Intent(ModProjectsActivity.this, ModDetailActivity.class);
+                    intent.putExtra("mod_id", mod.id);
+                    startActivity(intent);
+                }
             });
         }
 
-        @Override
-        public int getItemCount() {
-            return list == null ? 0 : list.size();
-        }
+        @Override public int getItemCount() { return list == null ? 0 : list.size(); }
 
         class VH extends RecyclerView.ViewHolder {
-            TextView name, version;
-
-            VH(View v) {
-                super(v);
-                name = v.findViewById(R.id.tv_name);
-                version = v.findViewById(R.id.tv_version);
-            }
+            TextView name;
+            VH(View v) { super(v); name = v.findViewById(R.id.tv_name); }
         }
     }
-}
+
+    private static class ModItem {
+        String name, version, id, path;
+        boolean isExternal;
+    }
+                                              }
+        

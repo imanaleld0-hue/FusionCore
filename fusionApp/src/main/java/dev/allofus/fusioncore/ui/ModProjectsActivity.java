@@ -1,6 +1,7 @@
 package dev.allofus.fusioncore.ui;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -67,8 +68,6 @@ public class ModProjectsActivity extends BaseFullscreenActivity {
 
     private void checkPermissionAndPick() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // On Android 13+ OpenDocument does not require storage permission for read,
-            // but we still check for broader access if the user wants to copy into sandbox.
             openFilePicker();
             return;
         }

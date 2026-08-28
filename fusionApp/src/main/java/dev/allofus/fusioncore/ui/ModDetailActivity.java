@@ -231,7 +231,45 @@ public class ModDetailActivity extends BaseFullscreenActivity {
             while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
         }
     }
+    private void runBuild(ModBuilder builder) {
 
+    new Thread(() -> {
+
+        try {
+
+            File output = builder.build(project);
+
+            runOnUiThread(() ->
+                    Toast.makeText(
+                            ModDetailActivity.this,
+                            "Build completed:\n" +
+                                    output.getAbsolutePath(),
+                            Toast.LENGTH_LONG
+                    ).show()
+            );
+
+        } catch (Exception e) {
+
+            runOnUiThread(() ->
+                    new AlertDialog.Builder(
+                            ModDetailActivity.this
+                    )
+                            .setTitle("Build Failed")
+                            .setMessage(
+                                    e.getMessage() != null
+                                            ? e.getMessage()
+                                            : e.toString()
+                            )
+                            .setPositiveButton(
+                                    "OK",
+                                    null
+                            )
+                            .show()
+            );
+        }
+
+    }).start();
+    }
     private class FileAdapter extends RecyclerView.Adapter<FileAdapter.VH> {
         List<FileItem> list = new ArrayList<>();
         void setItems(List<FileItem> list) { this.list = list; notifyDataSetChanged(); }

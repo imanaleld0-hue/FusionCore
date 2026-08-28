@@ -12,7 +12,7 @@
         android:allowBackup="true"
         android:icon="@mipmap/app_icon"
         android:label="@string/app_name"
-        android:theme="@style/StubActivity"
+        android:theme="@style/Theme.FusionCore"
         android:requestLegacyExternalStorage="true">
 
         <activity

@@ -9,6 +9,12 @@ public class FusionSettings {
     public static String getPlayerName(Context ctx) {
         return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("player_name", "Player");
     }
+    
+    public static String getActivityOverrideForGame(Context ctx, String packageName) {
+    return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString("activity_override_" + packageName, "Automatic");
+    }
+    
     public static void setPlayerName(Context ctx, String name) {
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("player_name", name).apply();
     }

@@ -253,5 +253,46 @@ public class SelectorActivity extends BaseFullscreenActivity {
     private record AppEntry(String packageName, String label, Drawable icon, String versionName, long versionCode) {
         @NonNull @Override public String toString() { return label + " (" + packageName + ")"; }
     }
+
+    /**
+     * Safely loads an application icon.
+     *
+     * Avoids NameNotFoundException from
+     * PackageManager.getApplicationIcon(String).
+     */
+    private Drawable getSafeApplicationIcon(
+            PackageManager pm,
+            String packageName) {
+
+        try {
+            ApplicationInfo info =
+                    pm.getApplicationInfo(packageName, 0);
+
+            Drawable icon =
+                    pm.getApplicationIcon(info);
+
+            if (icon != null) {
+                return icon;
+            }
+
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.w(
+                    TAG,
+                    "Application disappeared while loading icon: "
+                            + packageName
+            );
+
+        } catch (Throwable e) {
+            Log.w(
+                    TAG,
+                    "Failed to load icon: "
+                            + packageName,
+                    e
+            );
+        }
+
+        return pm.getDefaultActivityIcon();
+    }
+
 }
                             

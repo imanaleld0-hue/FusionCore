@@ -157,8 +157,8 @@ public class BootstrapActivity extends AppCompatActivity {
 
     private void failAndFinish(String message, Throwable error) {
         runOnMainThread(() -> {
-            if (error != null) Log.e(TAG, "[Bootstrap] ERROR: " + message, error); FusionLog.e(this, TAG, "[Bootstrap] ERROR: " + message + (error == null ? "" : " :: " + error));
-            else Log.e(TAG, "[Bootstrap] ERROR: " + message);
+            if (error != null) { Log.e(TAG, "[Bootstrap] ERROR: " + message, error); FusionLog.e(this, TAG, "[Bootstrap] ERROR:  " + message + (error == null ? "" : " :: " + error)); }
+            else { Log.e(TAG, "[Bootstrap] ERROR: " + message); }
             if (statusView != null) statusView.setText("Error");
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
             finish();

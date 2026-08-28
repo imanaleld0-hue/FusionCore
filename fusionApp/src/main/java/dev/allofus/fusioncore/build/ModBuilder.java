@@ -428,6 +428,7 @@ public class ModBuilder {
                                 listener,
                                 percent,
                                 "Download .NET SDK..."
+                            )
                               }
                 }
             }

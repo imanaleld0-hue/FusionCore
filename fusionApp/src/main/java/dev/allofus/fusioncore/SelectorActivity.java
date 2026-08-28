@@ -152,6 +152,25 @@ public class SelectorActivity extends BaseFullscreenActivity {
         return result;
     }
 
+    private static Drawable safeApplicationIcon(
+            PackageManager pm,
+            String packageName
+    ) {
+        try {
+            ApplicationInfo info = pm.getApplicationInfo(packageName, 0);
+            Drawable icon = pm.getApplicationIcon(info);
+            if (icon != null) {
+                return icon;
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.w(TAG, "Application icon not found: " + packageName);
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed to load application icon: " + packageName, t);
+        }
+
+        return pm.getDefaultActivityIcon();
+    }
+
     private static boolean hasIl2Cpp(ApplicationInfo info) {
         List<String> apkPaths = new ArrayList<>();
         if (info.sourceDir != null) apkPaths.add(info.sourceDir);

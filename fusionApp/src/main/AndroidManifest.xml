@@ -1,58 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="dev.allofus.fusioncore">
-
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-
-    <application
-        android:allowBackup="true"
-        android:icon="@mipmap/app_icon"
-        android:label="@string/app_name"
-        android:theme="@style/Theme.FusionCore"
-        android:requestLegacyExternalStorage="true">
-
-        <activity
-            android:name=".SelectorActivity"
-            android:exported="true"
-            android:launchMode="singleTask">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".BootstrapActivity"
-            android:exported="false"
-            android:screenOrientation="landscape"/>
-
-        <activity
-            android:name=".ui.ModProjectsActivity"
-            android:exported="false"/>
-
-        <activity
-            android:name=".ui.ModDetailActivity"
-            android:exported="false"/>
-
-        <activity
-            android:name=".ui.MiniIDEActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize"/>
-
-        <activity
-            android:name=".ui.SettingsActivity"
-            android:exported="false"/>
-
-        <activity
-            android:name=".ui.LogsViewerActivity"
-            android:exported="false"/>
-
-        <activity
-            android:name=".ui.ConfigEditorActivity"
-            android:exported="false"/>
-    </application>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="dev.allofus.fusioncore">
+ <uses-permission android:name="android.permission.INTERNET" />
+ <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+ <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+ <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+ <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+ <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+ <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+ <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+ <application android:allowBackup="true" android:icon="@mipmap/app_icon" android:label="@string/app_name" android:theme="@style/Theme.FusionCore" android:requestLegacyExternalStorage="true">
+  <activity android:name=".SelectorActivity" android:exported="true" android:launchMode="singleTask"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
+  <activity android:name=".BootstrapActivity" android:exported="false" android:screenOrientation="landscape"/>
+  <activity android:name=".StubActivity" android:exported="false" android:screenOrientation="landscape"/>
+  <activity android:name=".ui.ModProjectsActivity" android:exported="false"/>
+  <activity android:name=".ui.ModDetailActivity" android:exported="false"/>
+  <activity android:name=".ui.MiniIDEActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".ui.SettingsActivity" android:exported="false"/>
+  <activity android:name=".ui.LogsViewerActivity" android:exported="false"/>
+  <activity android:name=".ui.ConfigEditorActivity" android:exported="false"/>
+ </application>
 </manifest>

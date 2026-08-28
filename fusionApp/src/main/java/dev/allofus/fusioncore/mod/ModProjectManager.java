@@ -29,7 +29,8 @@ public class ModProjectManager {
             obj.put("name", name);
             obj.put("version", version);
             obj.put("plugin", pluginName);
-
+        }
+        
             File dir = new File(context.getFilesDir(), "projects/" + name);
             dir.mkdirs();
             obj.put("path", dir.getAbsolutePath());

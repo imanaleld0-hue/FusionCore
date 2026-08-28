@@ -20,6 +20,8 @@ public class MiniIDEActivity extends BaseFullscreenActivity {
 
     private EditText editor;
     private TextView tvReadOnly;
+    private MaterialButton btnPrev;
+    private MaterialButton btnNext;
     private String filePath;
     private boolean readOnly;
     private static final long MAX_SIZE = 1024 * 1024; // 1 MB threshold for chunking
@@ -35,8 +37,8 @@ public class MiniIDEActivity extends BaseFullscreenActivity {
         editor = findViewById(R.id.editor);
         tvReadOnly = findViewById(R.id.tv_read_only);
         MaterialButton btnSave = findViewById(R.id.btn_save);
-        MaterialButton btnPrev = findViewById(R.id.btn_prev);
-        MaterialButton btnNext = findViewById(R.id.btn_next);
+        btnPrev = findViewById(R.id.btn_prev);
+        btnNext = findViewById(R.id.btn_next);
 
         filePath = getIntent().getStringExtra("file_path");
         readOnly = getIntent().getBooleanExtra("read_only", false);

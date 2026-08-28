@@ -247,5 +247,5 @@ public class SelectorActivity extends BaseFullscreenActivity {
     private record AppEntry(String packageName, String label, Drawable icon, String versionName, long versionCode) {
         @NonNull @Override public String toString() { return label + " (" + packageName + ")"; }
     }
-                }
+}
                             

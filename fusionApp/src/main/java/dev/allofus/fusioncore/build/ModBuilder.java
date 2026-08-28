@@ -752,7 +752,7 @@ public class ModBuilder {
 
         File exact =
                 findFile(
-                        filez,
+                        files,
                         expected
                 );
 

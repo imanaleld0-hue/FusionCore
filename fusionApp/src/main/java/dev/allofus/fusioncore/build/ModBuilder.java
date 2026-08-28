@@ -271,7 +271,7 @@ public class ModBuilder {
                 notifyProgress(
                         listener,
                         98,
-                        "Checking.NET SDK..."
+                        "Checking .NET SDK..."
                 );
 
                 File dotnet =
@@ -427,7 +427,7 @@ public class ModBuilder {
                                 listener,
                                 percent,
                                 "Download .NET SDK..."
-                            )
+                            );
                     }
                 }
             }

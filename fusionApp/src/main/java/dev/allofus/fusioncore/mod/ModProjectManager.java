@@ -62,9 +62,7 @@ public class ModProjectManager {
 
             arr.put(obj);
             save(arr);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
     public void addProject(String name, String path) {
@@ -78,9 +76,7 @@ public class ModProjectManager {
             obj.put("path", path);
             arr.put(obj);
             save(arr);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
     public List<ModProject> getProjects() {
@@ -97,26 +93,18 @@ public class ModProjectManager {
                 p.path = o.optString("path");
                 list.add(p);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
         return list;
     }
 
     public ModProject getProject(String id) {
-        for (ModProject p : getProjects()) {
-            if (p.id.equals(id)) return p;
-        }
+        for (ModProject p : getProjects()) if (p.id.equals(id)) return p;
         return null;
     }
 
     private JSONArray getProjectsJson() {
         String s = prefs.getString(KEY_PROJECTS, "[]");
-        try {
-            return new JSONArray(s);
-        } catch (Exception e) {
-            return new JSONArray();
-        }
+        try { return new JSONArray(s); } catch (Exception e) { return new JSONArray(); }
     }
 
     private void save(JSONArray arr) {
@@ -124,16 +112,10 @@ public class ModProjectManager {
     }
 
     private void writeFile(File f, String content) throws Exception {
-        FileWriter w = new FileWriter(f);
-        w.write(content);
-        w.close();
+        FileWriter w = new FileWriter(f); w.write(content); w.close();
     }
 
     public static class ModProject {
-        public String id;
-        public String name;
-        public String version;
-        public String plugin;
-        public String path;
+        public String id, name, version, plugin, path;
     }
 }

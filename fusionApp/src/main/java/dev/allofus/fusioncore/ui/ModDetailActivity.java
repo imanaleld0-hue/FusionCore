@@ -35,6 +35,7 @@ public class ModDetailActivity extends BaseFullscreenActivity {
     private ModProjectManager.ModProject project;
     private RecyclerView recyclerFiles;
     private FileAdapter fileAdapter;
+    private File lastBuiltDll;
 
     private final ActivityResultLauncher<String> exportPicker =
             registerForActivityResult(new ActivityResultContracts.CreateDocument("application/zip"), uri -> {
@@ -196,9 +197,12 @@ public class ModDetailActivity extends BaseFullscreenActivity {
 }
     
     private void addToModsList() {
-        ModBuilder builder = new ModBuilder(this);
+        if (lastBuiltDll == null || !lastBuiltDll.isFile()) {
+            Toast.makeText(this, "Build the project successfully first", Toast.LENGTH_LONG).show();
+            return;
+        }
         try {
-            File output = builder.build(project);
+            File output = lastBuiltDll;
             File pluginsDir = new File(Environment.getExternalStorageDirectory(),
                     "FusionCore/com.innersloth.spacemafia/BepInEx/plugins/");
             pluginsDir.mkdirs();
@@ -239,14 +243,9 @@ public class ModDetailActivity extends BaseFullscreenActivity {
 
             File output = builder.build(project);
 
-            runOnUiThread(() ->
-                    Toast.makeText(
-                            ModDetailActivity.this,
-                            "Build completed:\n" +
-                                    output.getAbsolutePath(),
-                            Toast.LENGTH_LONG
-                    ).show()
-            );
+            lastBuiltDll = output;
+            runOnUiThread(() -> Toast.makeText(ModDetailActivity.this,
+                    "Build completed. You can now use Add to Mods.", Toast.LENGTH_LONG).show());
 
         } catch (Exception e) {
 

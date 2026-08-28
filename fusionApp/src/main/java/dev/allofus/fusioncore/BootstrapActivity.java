@@ -30,6 +30,7 @@ import dev.allofus.fusioncore.FusionConfigStore;
 import dev.allofus.fusioncore.NativeLibraryManager;
 import dev.allofus.fusioncore.Utilities;
 import android.view.View;
+import dev.allofus.fusioncore.log.FusionLog;
 
 public class BootstrapActivity extends AppCompatActivity {
     private static final String TAG = "FusionCore";
@@ -60,7 +61,7 @@ public class BootstrapActivity extends AppCompatActivity {
     }
 
     private void runBootstrapFlow(String targetPackage) {
-        Log.i(TAG, "[Bootstrap] Starting for package: " + targetPackage);
+        Log.i(TAG, "[Bootstrap] Starting for package: " + targetPackage); FusionLog.i(this, TAG, "[Bootstrap] Starting for package: " + targetPackage);
         Context gameContext;
         try {
             gameContext = createPackageContext(targetPackage, CONTEXT_IGNORE_SECURITY | CONTEXT_INCLUDE_CODE);
@@ -156,7 +157,7 @@ public class BootstrapActivity extends AppCompatActivity {
 
     private void failAndFinish(String message, Throwable error) {
         runOnMainThread(() -> {
-            if (error != null) Log.e(TAG, "[Bootstrap] ERROR: " + message, error);
+            if (error != null) Log.e(TAG, "[Bootstrap] ERROR: " + message, error); FusionLog.e(this, TAG, "[Bootstrap] ERROR: " + message + (error == null ? "" : " :: " + error));
             else Log.e(TAG, "[Bootstrap] ERROR: " + message);
             if (statusView != null) statusView.setText("Error");
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();

@@ -586,10 +586,11 @@ public class ModBuilder {
     }
 
     private File getDotnetDirectory() {
-
+        // Android may mount ordinary app data with noexec. code_cache is the
+        // writable location intended for runtime-generated executable code.
         return new File(
-                context.getFilesDir(),
-                "dotnet/" + DOTNET_VERSION
+                context.getCodeCacheDir(),
+                "fusion-dotnet/" + DOTNET_VERSION
         );
     }
 

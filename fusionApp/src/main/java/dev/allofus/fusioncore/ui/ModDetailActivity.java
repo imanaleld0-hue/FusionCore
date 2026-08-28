@@ -108,10 +108,93 @@ public class ModDetailActivity extends BaseFullscreenActivity {
         showDotnetDownloadDialog(builder);
         return;
     }
-
+   
     runBuild(builder);
     }
 
+    private void showDotnetDownloadDialog(ModBuilder builder) {
+ 
+    new AlertDialog.Builder(this)
+            .setTitle(".NET SDK Required")
+            .setMessage(
+                    "To build C# mods, FusionCore needs to download " +
+                    ".NET SDK 10.0.400 for ARM64.\n\n" +
+                    "The SDK will be downloaded once and stored " +
+                    "in FusionCore's internal storage."
+            )
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Download", (dialog, which) -> {
+
+                ProgressDialog progress =
+                        new ProgressDialog(this);
+
+                progress.setTitle("Downloading .NET SDK");
+                progress.setMessage("Preparing...");
+                progress.setProgressStyle(
+                        ProgressDialog.STYLE_HORIZONTAL
+                );
+                progress.setMax(100);
+                progress.setProgress(0);
+                progress.setCancelable(false);
+                progress.show();
+
+                builder.installDotnet(
+                        new ModBuilder.ProgressListener() {
+
+                            @Override
+                            public void onProgress(
+                                    int percent,
+                                    String message
+                            ) {
+                                progress.setProgress(percent);
+                                progress.setMessage(
+                                        message + "\n" +
+                                        percent + "%"
+                                );
+                            }
+
+                            @Override
+                            public void onComplete(
+                                    File dotnet
+                            ) {
+                                progress.dismiss();
+
+                                Toast.makeText(
+                                        ModDetailActivity.this,
+                                        ".NET SDK installed successfully",
+                                        Toast.LENGTH_SHORT
+                                ).show();
+
+                                runBuild(builder);
+                            }
+
+                            @Override
+                            public void onError(
+                                    Exception error
+                            ) {
+                                progress.dismiss();
+
+                                new AlertDialog.Builder(
+                                        ModDetailActivity.this
+                                )
+                                        .setTitle(
+                                                ".NET SDK Installation Failed"
+                                        )
+                                        .setMessage(
+                                                error.getMessage()
+                                        )
+                                        .setPositiveButton(
+                                                "OK",
+                                                null
+                                        )
+                                        .show();
+                            }
+                        }
+                );
+            })
+            .show();
+}
+    
     private void addToModsList() {
         ModBuilder builder = new ModBuilder(this);
         try {

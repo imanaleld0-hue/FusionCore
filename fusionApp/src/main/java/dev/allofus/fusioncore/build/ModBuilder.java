@@ -773,11 +773,6 @@ public class ModBuilder {
             }
         }
         
-        File exact =
-                findFile(
-                        files,
-                        expected
-                );
 
         
         for (File file : files) {

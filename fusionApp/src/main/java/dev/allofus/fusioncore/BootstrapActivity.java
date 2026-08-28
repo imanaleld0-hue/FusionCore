@@ -117,7 +117,7 @@ public class BootstrapActivity extends AppCompatActivity {
         try {
             ClassLoaderHooks.installHooks(gameContext.getClassLoader());
             PackageManagerHooks.installHooks(getPackageManager());
-            InstrumentationHooks.install(getApplicationContext());
+            InstrumentationHooks.install();
             Log.i(TAG, "[Bootstrap] Core hooks installed successfully");
         } catch (Exception e) {
             Log.e(TAG, "[Bootstrap] Hook installation error", e);

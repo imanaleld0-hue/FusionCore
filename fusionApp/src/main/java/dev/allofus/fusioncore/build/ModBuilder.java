@@ -750,6 +750,7 @@ public class ModBuilder {
                 sanitizeDllName(pluginName)
                         .toLowerCase();
 
+        File exact = null;
         if (exact != null) {
             return exact;
         }

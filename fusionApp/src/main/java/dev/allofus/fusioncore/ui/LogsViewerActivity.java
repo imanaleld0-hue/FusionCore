@@ -9,6 +9,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import dev.allofus.fusioncore.log.FusionLog;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;

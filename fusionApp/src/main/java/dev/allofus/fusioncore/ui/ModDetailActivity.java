@@ -303,4 +303,4 @@ public class ModDetailActivity extends BaseFullscreenActivity {
         String name, path;
         FileItem(String n, String p) { name = n; path = p; }
     }
-                                }
+}                                

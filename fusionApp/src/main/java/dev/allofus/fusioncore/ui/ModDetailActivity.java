@@ -55,7 +55,7 @@ public class ModDetailActivity extends BaseFullscreenActivity {
         MaterialButton btnIde = findViewById(R.id.btn_ide);
         MaterialButton btnBuild = findViewById(R.id.btn_build);
         MaterialButton btnExport = findViewById(R.id.btn_export);
-        MaterialButton btnAdd = findViewById(R.id.btn_add_to_mods_list); // добавьте в layout
+        MaterialButton btnAdd = findViewById(R.id.btn_add_to_mods_list); 
 
         recyclerFiles = findViewById(R.id.recycler_files);
         recyclerFiles.setLayoutManager(new LinearLayoutManager(this));

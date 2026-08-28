@@ -141,7 +141,13 @@ public class SelectorActivity extends BaseFullscreenActivity {
                 versionCode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P ? pi.getLongVersionCode() : pi.versionCode;
             } catch (Exception e) { Log.w(TAG, "Metadata fail: " + pkg, e); }
 
-            result.add(new AppEntry(pkg, label, icon, versionName, versionCode));
+            result.add(new AppEntry(
+                    pkg,
+                    label,
+                    pm.getApplicationIcon(pkg),
+                    versionName,
+                    versionCode
+            ));
         }
         return result;
     }

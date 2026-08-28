@@ -25,6 +25,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
 
 public class ModDetailActivity extends BaseFullscreenActivity {
 
@@ -100,13 +102,14 @@ public class ModDetailActivity extends BaseFullscreenActivity {
     }
 
     private void buildMod() {
-        ModBuilder builder = new ModBuilder(this);
-        try {
-            File output = builder.build(project);
-            Toast.makeText(this, "Build ready: " + output.getAbsolutePath(), Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            Toast.makeText(this, "Build failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
+    ModBuilder builder = new ModBuilder(this);
+
+    if (!builder.isDotnetInstalled()) {
+        showDotnetDownloadDialog(builder);
+        return;
+    }
+
+    runBuild(builder);
     }
 
     private void addToModsList() {

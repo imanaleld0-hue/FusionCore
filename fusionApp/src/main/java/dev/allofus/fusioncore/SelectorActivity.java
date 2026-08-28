@@ -111,7 +111,7 @@ public class SelectorActivity extends BaseFullscreenActivity {
         List<AppEntry> result = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         
-        icon = getPackageManager().getDefaultActivityIcon();
+        
         
         Intent launchIntent = new Intent(Intent.ACTION_MAIN);
         launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -129,12 +129,11 @@ public class SelectorActivity extends BaseFullscreenActivity {
             if (!hasIl2Cpp(info)) continue;
 
             String label = pkg;
-            Drawable icon = defaultIcon;
+            
             String versionName = "Unknown";
             long versionCode = 0L;
             try {
                 label = pm.getApplicationLabel(info).toString();
-                icon = pm.getApplicationIcon(info);
                 PackageInfo pi = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                         ? pm.getPackageInfo(pkg, PackageManager.PackageInfoFlags.of(0))
                         : pm.getPackageInfo(pkg, 0);

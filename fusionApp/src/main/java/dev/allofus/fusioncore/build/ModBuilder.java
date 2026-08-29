@@ -283,19 +283,23 @@ public class ModBuilder {
                     );
                 }
 
-                if (!dotnet.setExecutable(
-                        true,
-                        false
-                )) {
-                    Runtime.getRuntime()
-                            .exec(new String[]{
-                                    "chmod",
-                                    "755",
-                                    dotnet.getAbsolutePath()
-                            })
-                            .waitFor();
+                if (!dotnet.setExecutable(true, false)) {
+                Process chmod = new ProcessBuilde(
+                    "chmod",
+                     "755",
+                    dotnet.getAbsolutePath()
+                ).start();
+                    int exitCode = chmod.waitFor();
+                    
+                    if (exitCode != 0 || !dotnet.canExecute()) {
+                        throw new IOException(
+                            "Cannot make dotnet executable: "
+                        + dotnet.getAbsolutePath()
+                        + ", chmod exit="
+                        + exitCode
+        );
+    }
                 }
-
                 verifyDotnet(dotnet);
 
                 if (archive.exists()) {

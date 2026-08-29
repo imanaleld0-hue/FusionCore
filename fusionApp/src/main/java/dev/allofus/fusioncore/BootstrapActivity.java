@@ -192,8 +192,7 @@ public class BootstrapActivity extends Activity {
     private void addLog(String line) {
         runOnMainThread(() -> {
             if (logs != null) {
-                logs.append(line + "
-");
+                logs.append(line + "");
             }
         });
     }
@@ -263,10 +262,7 @@ public class BootstrapActivity extends Activity {
         }
 
         FusionLogger.write(
-                message + (error != null
-                        ? "
-" + Log.getStackTraceString(error)
-                        : "")
+                message + (error != null  ? "" + Log.getStackTraceString(error) : "")
         );
 
         runOnMainThread(() -> {

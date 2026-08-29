@@ -1,19 +1,18 @@
 package dev.allofus.fusioncore;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Looper;
 import android.util.Log;
+import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,62 +21,100 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import dev.allofus.fusioncore.ClassLoaderHooks;
-import dev.allofus.fusioncore.InstrumentationHooks;
-import dev.allofus.fusioncore.PackageManagerHooks;
-import dev.allofus.fusioncore.FusionConfig;
-import dev.allofus.fusioncore.FusionConfigStore;
-import dev.allofus.fusioncore.NativeLibraryManager;
-import dev.allofus.fusioncore.Utilities;
-import android.view.View;
 import dev.allofus.fusioncore.log.FusionLog;
 
-public class BootstrapActivity extends AppCompatActivity {
+public class BootstrapActivity extends Activity {
+
     private static final String TAG = "FusionCore";
+
     public static final String EXTRA_TARGET_PACKAGE = "target_package";
     public static final String EXTRA_USE_ORIGINAL_LIBUNITY = "og_libunity";
-    private static final String GLOBAL_METADATA_FILE = "global-metadata.dat";
     public static final String EXTRA_TARGET_ORIENTATION = "fusioncore.target_orientation";
-    
+    public static final String BACKUP_UNITY_VERSION = "2017.0.0";
+    private static final String GLOBAL_METADATA_FILE = "global-metadata.dat";
+
     private final AtomicBoolean fusionInitialized = new AtomicBoolean(false);
-    private TextView statusView;
-    private ProgressBar spinnerProgress;
+    private final AtomicBoolean bootstrapStarted = new AtomicBoolean(false);
+    private TextView currentAction;
+    private TextView logs;
+    
+    private TextView stageView;
+    private TextView operationView;
+    private TextView progressDetailsView;
+    private TextView percentView;
+    
+    private View errorPanel;
+    private TextView errorView;
+    private View retryButton;
+    
+    private ProgressBar downloadProgress;
     private volatile PreparedFusionState preparedState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bootstrap);
-        statusView = findViewById(R.id.bootstrap_status);
-        spinnerProgress = findViewById(R.id.bootstrap_progress);
-        setPhaseStatus("Preparing...");
+        currentAction = findViewById(R.id.bootstrap_operation);
+        logs = findViewById(R.id.bootstrap_logs);
+        errorPanel = findViewById(R.id.bootstrap_error_panel);
+        errorView = findViewById(R.id.bootstrap_error);
+        retryButton = findViewById(R.id.bootstrap_retry);
+  
+        if (errorPanel != null) {
+            errorPanel.setVisibility(View.GONE);
+        }
+        
+        stageView = findViewById(R.id.bootstrap_stage);
+        operationView = findViewById(R.id.bootstrap_operation);
+        progressDetailsView = findViewById(R.id.bootstrap_details);
+        percentView = findViewById(R.id.bootstrap_percent);
+
+        downloadProgress = findViewById(R.id.bootstrap_download_progress);
+
+        setPhaseStatus("Initializing");
 
         String targetPackage = getIntent().getStringExtra(EXTRA_TARGET_PACKAGE);
         if (targetPackage == null || targetPackage.isEmpty()) {
-            failAndFinish("No target package specified!", null);
+            failAndFinish("No target package specified in intent extras!", null);
             return;
         }
-        statusView.post(() -> new Thread(() -> runBootstrapFlow(targetPackage), "bootstrap-flow").start());
+
+        if (!bootstrapStarted.compareAndSet(false, true)) {
+            Log.w(TAG, "Bootstrap flow already started, ignoring duplicate start");
+            return;
+        }
+
+        new Thread(
+            () -> runBootstrapFlow(targetPackage),
+            "bootstrap-flow"
+        ).start();
     }
 
     private void runBootstrapFlow(String targetPackage) {
-        Log.i(TAG, "[Bootstrap] Starting for package: " + targetPackage); FusionLog.i(this, TAG, "[Bootstrap] Starting for package: " + targetPackage);
-        Context gameContext;
-        try {
-            gameContext = createPackageContext(targetPackage, CONTEXT_IGNORE_SECURITY | CONTEXT_INCLUDE_CODE);
-        } catch (Exception e) {
-            failAndFinish("Failed to create package context: " + targetPackage, e);
-            return;
-        }
-
         Intent launchIntent = getPackageManager().getLaunchIntentForPackage(targetPackage);
         if (launchIntent == null) {
-            failAndFinish("No launch intent for: " + targetPackage, null);
+            failAndFinish("No launch intent for target package: " + targetPackage, null);
             return;
         }
 
         ComponentName launcher = launchIntent.getComponent();
-        if (launcher == null) launcher = launchIntent.resolveActivity(getPackageManager());
+        if (launcher == null) {
+            launcher = launchIntent.resolveActivity(getPackageManager());
+        }
+
+        if (launcher == null) {
+            failAndFinish("Failed to resolve launcher activity for target package: " + targetPackage, null);
+            return;
+        }
+
+        Context gameContext;
+        try {
+            gameContext = createPackageContext(targetPackage, CONTEXT_IGNORE_SECURITY | CONTEXT_INCLUDE_CODE);
+        } catch (Exception e) {
+            failAndFinish("Failed to create package context for target package: " + targetPackage, e);
+            return;
+        }
 
         String overrideActivity = FusionSettings.getActivityOverrideForGame(this, targetPackage);
         try {
@@ -86,21 +123,23 @@ public class BootstrapActivity extends AppCompatActivity {
                 if (overrideClass != null) {
                     launcher = new ComponentName(targetPackage, overrideActivity);
                     Log.i(TAG, "[Bootstrap] Using override activity: " + overrideActivity);
+                    FusionLog.i(this, TAG, "[Bootstrap] Using override activity: " + overrideActivity);
                 }
             }
         } catch (Exception e) {
             Log.w(TAG, "[Bootstrap] Override activity failed", e);
+            FusionLog.w(this, TAG, "[Bootstrap] Override activity failed: " + e);
         }
 
-        if (launcher == null) {
-            failAndFinish("Failed to resolve launcher activity!", null);
-            return;
-        }
+        boolean useOriginalLibUnity = getIntent().getBooleanExtra(
+                EXTRA_USE_ORIGINAL_LIBUNITY,
+                false
+        );
 
         final int targetOrientation = resolveTargetOrientation(launcher);
 
         try {
-            preparedState = prepareFusionState(this, gameContext, targetPackage);
+            preparedState = prepareFusionState(this, gameContext, targetPackage, useOriginalLibUnity);
         } catch (Throwable t) {
             failAndFinish("Failed while preparing Fusion runtime.", t);
             return;
@@ -111,75 +150,235 @@ public class BootstrapActivity extends AppCompatActivity {
         try {
             launcherClass = gameContext.getClassLoader().loadClass(launcherClassName);
         } catch (ClassNotFoundException e) {
-            failAndFinish("Failed to load launcher class!", e);
+            Log.e(TAG, "Failed to get class for launcher activity!");
+            FusionLog.e(this, TAG, "Failed to get class for launcher activity: " + e);
             return;
         }
 
-        setPhaseStatus("Installing hooks...");
+        setPhaseStatus(getString(R.string.bootstrap_status_installing_hooks));
         try {
             ClassLoaderHooks.installHooks(gameContext.getClassLoader());
             PackageManagerHooks.installHooks(getPackageManager());
             InstrumentationHooks.install();
-            Log.i(TAG, "[Bootstrap] Core hooks installed successfully");
+            UnityPlayerHooks.installHooks(gameContext);
         } catch (Exception e) {
-            Log.e(TAG, "[Bootstrap] Hook installation error", e);
+            Log.e(TAG, "Failed to install base hooks", e);
+            FusionLog.e(this, TAG, "Failed to install base hooks: " + e);
         }
-
+       
         try {
-            setPhaseStatus("Launching game...");
+            setPhaseStatus(getString(R.string.bootstrap_status_launching));
             initializeFusion(launcherClassName, targetPackage);
             runOnMainThread(() -> {
                 try {
                     var intent = new Intent(this, launcherClass);
                     intent.putExtra(InstrumentationHooks.EXTRA_TARGET_ORIENTATION, targetOrientation);
-                    var wrapped = new Intent(this, StubActivity.class);
-                    wrapped.putExtra(InstrumentationHooks.EXTRA_IS_DYNAMIC_ACTIVITY, true);
-                    wrapped.putExtra(InstrumentationHooks.EXTRA_ORIGINAL_INTENT, intent);
-                    wrapped.putExtra(InstrumentationHooks.EXTRA_TARGET_ORIENTATION, targetOrientation);
-                    startActivity(wrapped);
-                    finish();
+
+                    var intentWrapped = new Intent(this, StubActivity.class);
+                    intentWrapped.putExtra(InstrumentationHooks.EXTRA_IS_DYNAMIC_ACTIVITY, true);
+                    intentWrapped.putExtra(InstrumentationHooks.EXTRA_ORIGINAL_INTENT, intent);
+                    intentWrapped.putExtra(InstrumentationHooks.EXTRA_TARGET_ORIENTATION, targetOrientation);
+
+                    startActivity(intentWrapped);
                 } catch (Throwable t) {
-                    failAndFinish("Launch failed: " + launcherClassName, t);
+                    failAndFinish("Failed to launch target app's launcher activity: " + launcherClassName, t);
                 }
             });
         } catch (Exception e) {
-            failAndFinish("Launch exception: " + launcherClassName, e);
+            failAndFinish("Failed to launch target app's launcher activity: " + launcherClassName, e);
         }
     }
 
+    private void setCurrentAction(String action) {
+        runOnMainThread(() -> {
+            if (operationView != null) {
+                operationView.setText(action);
+            }
+            addLog(action);
+            FusionLogger.write(action);
+            FusionLog.i(this, TAG, action);
+        });
+    }
+    
     private void setPhaseStatus(String status) {
         runOnMainThread(() -> {
-            if (statusView != null) statusView.setText(status);
-            if (spinnerProgress != null) spinnerProgress.setVisibility(View.VISIBLE);
-            Log.i(TAG, "[Bootstrap] Phase: " + status);
+            if (stageView != null) {
+                stageView.setText(status);
+            }
+            if (operationView != null) {
+                operationView.setText("Preparing...");
+            }
+            if (downloadProgress != null) {
+                downloadProgress.setVisibility(View.GONE);
+                downloadProgress.setIndeterminate(false);
+                downloadProgress.setProgress(0);
+            }
+            if (progressDetailsView != null) {
+                progressDetailsView.setVisibility(View.GONE);
+                progressDetailsView.setText("");
+            }
         });
+    }
+    
+    private void addLog(String line) {
+        runOnMainThread(() -> {
+            if (logs != null) {
+                logs.append(line + "\n");
+            }
+        });
+    }
+
+    private void setDownloadStatus(long downloadedBytes, long totalBytes) {
+        runOnMainThread(() -> {
+            boolean hasTotal = totalBytes > 0L;
+
+            if (downloadProgress != null) {
+                downloadProgress.setVisibility(View.VISIBLE);
+                downloadProgress.setIndeterminate(!hasTotal);
+
+                if (hasTotal) {
+                    int percent = (int) Math.max(
+                            0L,
+                            Math.min(
+                                    100L,
+                                    (downloadedBytes * 100L) / totalBytes
+                            )
+                    );
+                    downloadProgress.setProgress(percent);
+                    if (percentView != null) {
+                        percentView.setText(percent + "%");
+                    }
+                } else {
+                    if (percentView != null) {
+                        percentView.setText("\u2026");
+                    }
+                }
+            }
+
+            if (stageView != null) {
+                stageView.setText("Downloading");
+            }
+            if (operationView != null) {
+                operationView.setText("Downloading libunity.so");
+            }
+            if (progressDetailsView != null) {
+                progressDetailsView.setVisibility(View.VISIBLE);
+                String totalText = hasTotal ? formatBytes(totalBytes) : "?";
+                progressDetailsView.setText(
+                        formatBytes(downloadedBytes) + " / " + totalText
+                );
+            }
+        });
+    }
+
+    private String formatBytes(long bytes) {
+        if (bytes < 1024L) {
+            return bytes + " B";
+        }
+        double value = bytes;
+        String[] units = new String[]{"B", "KB", "MB", "GB"};
+        int unitIndex = 0;
+        while (value >= 1024.0 && unitIndex < units.length - 1) {
+            value /= 1024.0;
+            unitIndex++;
+        }
+        return String.format(Locale.US, "%.1f %s", value, units[unitIndex]);
     }
 
     private void failAndFinish(String message, Throwable error) {
+        if (error != null) {
+            Log.e(TAG, message, error);
+            FusionLog.e(this, TAG, message + "\n" + Log.getStackTraceString(error));
+        } else {
+            Log.e(TAG, message);
+            FusionLog.e(this, TAG, message);
+        }
+
+        FusionLogger.write(
+                message + (error != null
+                        ? "\n" + Log.getStackTraceString(error)
+                        : "")
+        );
+
         runOnMainThread(() -> {
-            if (error != null) { Log.e(TAG, "[Bootstrap] ERROR: " + message, error); FusionLog.e(this, TAG, "[Bootstrap] ERROR:  " + message + (error == null ? "" : " :: " + error)); }
-            else { Log.e(TAG, "[Bootstrap] ERROR: " + message); }
-            if (statusView != null) statusView.setText("Error");
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-            finish();
+            if (stageView != null) {
+                stageView.setText("Bootstrap failed");
+            }
+            if (operationView != null) {
+                operationView.setText(message);
+            }
+            if (percentView != null) {
+                percentView.setText("!");
+            }
+            if (downloadProgress != null) {
+                downloadProgress.setVisibility(View.GONE);
+            }
+            if (progressDetailsView != null) {
+                progressDetailsView.setVisibility(View.VISIBLE);
+                progressDetailsView.setText(
+                        error != null
+                                ? Log.getStackTraceString(error)
+                                : message
+                );
+            }
+            if (errorPanel != null) {
+                errorPanel.setVisibility(View.VISIBLE);
+            }
+            if (errorView != null) {
+                errorView.setText(message);
+            }
+            if (retryButton != null) {
+                retryButton.setOnClickListener(v -> {
+                    if (errorPanel != null) {
+                        errorPanel.setVisibility(View.GONE);
+                    }
+                    if (percentView != null) {
+                        percentView.setText("0%");
+                    }
+                    setPhaseStatus("Retrying");
+                });
+            }
         });
     }
-
-    private void runOnMainThread(Runnable r) {
-        if (Looper.myLooper() == Looper.getMainLooper()) r.run();
-        else runOnUiThread(r);
+  
+    private void runOnMainThread(Runnable runnable) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            runnable.run();
+        } else {
+            runOnUiThread(runnable);
+        }
     }
 
+    private void updateBootstrapPercent(int percent) {
+        runOnMainThread(() -> {
+            int safePercent = Math.max(0, Math.min(100, percent));
+            if (percentView != null) {
+                percentView.setText(safePercent + "%");
+            }
+            if (downloadProgress != null && !downloadProgress.isIndeterminate()) {
+                downloadProgress.setProgress(safePercent);
+            }
+        });
+    }
+    
     private void initializeFusion(String launcherName, String targetPackage) {
-        if (!fusionInitialized.compareAndSet(false, true)) return;
-        PreparedFusionState prepared = preparedState;
-        if (prepared == null || !targetPackage.equals(prepared.targetPackage)) {
-            Log.e(TAG, "[Bootstrap] Config mismatch for: " + targetPackage);
+        if (!fusionInitialized.compareAndSet(false, true)) {
             return;
         }
-        Log.i(TAG, "[Bootstrap] Initializing Fusion for " + targetPackage);
+
+        PreparedFusionState prepared = preparedState;
+        if (prepared == null || !targetPackage.equals(prepared.targetPackage)) {
+            Log.e(TAG, "Fusion config was not prepared for target package: " + targetPackage);
+            FusionLog.e(this, TAG, "Fusion config was not prepared for target package: " + targetPackage);
+            return;
+        }
+
+        Log.i(TAG, "Initializing Fusion for " + targetPackage + " via " + launcherName);
+        FusionLog.i(this, TAG, "Initializing Fusion for " + targetPackage + " via " + launcherName);
+
         try {
             FusionConfig config = prepared.config;
+
             NativeLibraryManager.addFusionLibrary("main");
             NativeLibraryManager.addFusionLibrary("fusion");
             NativeLibraryManager.addDataLibrary("il2cpp");
@@ -187,79 +386,161 @@ public class BootstrapActivity extends AppCompatActivity {
             NativeLibraryManager.setupLibraryHooks(config);
 
             File stagedConfig = FusionConfigStore.write(this, config);
-            Log.i(TAG, "[Bootstrap] Config staged: " + stagedConfig.getAbsolutePath());
+            Log.i(TAG, "Fusion config staged at " + stagedConfig.getAbsolutePath());
+            FusionLog.i(this, TAG, "Fusion config staged at " + stagedConfig.getAbsolutePath());
         } catch (Throwable t) {
-            Log.e(TAG, "[Bootstrap] Init error", t);
+            Log.e(TAG, "Failed to initialize Fusion in launcher beforeCall", t);
+            FusionLog.e(this, TAG, "Failed to initialize Fusion in launcher beforeCall: " + t);
         }
     }
 
-    private PreparedFusionState prepareFusionState(Context appContext, Context gameContext, String targetPackage) {
+    private PreparedFusionState prepareFusionState(Context appContext,
+            Context gameContext,
+            String targetPackage,
+            boolean useOriginalLibUnity) {
         String gameLibDir = gameContext.getApplicationInfo().nativeLibraryDir;
         String appLibDir = appContext.getApplicationInfo().nativeLibraryDir;
+        String targetGameAbi = resolveTargetGameAbi(gameLibDir);
         File appDataDir = new File(appContext.getFilesDir(), targetPackage);
         File dataOnSdCard = new File(new File(Environment.getExternalStorageDirectory(), "FusionCore"), targetPackage);
 
-        setPhaseStatus("Copying assets...");
+        setPhaseStatus(getString(R.string.bootstrap_status_copy_assets));
         File copiedData = new File(appDataDir, "Data_copy");
         boolean copied = Utilities.copyAssets(gameContext.getAssets(), "bin/Data", copiedData);
-        if (!copied) Log.e(TAG, "[Bootstrap] Asset copy failed!");
-        else applyGlobalMetadataOverride(dataOnSdCard, copiedData);
+        if (!copied) {
+            Log.e(TAG, "Failed to copy Unity Data assets! BepInEx may not work correctly.");
+            FusionLog.e(this, TAG, "Failed to copy Unity Data assets!");
+        } else {
+            applyGlobalMetadataOverride(dataOnSdCard, copiedData);
+        }
 
-        setPhaseStatus("Extracting runtime...");
+        setPhaseStatus(getString(R.string.bootstrap_status_detecting_version));
+        String version = VersionLookup.TryLookup(copiedData);
+        if (version == null) {
+            Log.e(TAG, "Failed to determine Unity version! BepInEx may not work correctly.");
+            FusionLog.e(this, TAG, "Failed to determine Unity version!");
+            version = BACKUP_UNITY_VERSION;
+            useOriginalLibUnity = true;
+        } else if (useOriginalLibUnity) {
+            Log.i(TAG, "Skipping libunity download");
+            FusionLog.i(this, TAG, "Skipping libunity download");
+        } else {
+            Log.i(TAG, "Determined Unity version: " + version);
+            FusionLog.i(this, TAG, "Determined Unity version: " + version);
+            if (LibUnityDownloader.downloadAndCacheSafely(appDataDir, version, targetGameAbi, new LibUnityDownloader.DownloadProgressListener() {
+                @Override
+                public void onDownloadStarted(String url, long totalBytes) {
+                    setDownloadStatus(0L, totalBytes);
+                }
+
+                @Override
+                public void onDownloadProgress(long downloadedBytes, long totalBytes) {
+                    setDownloadStatus(downloadedBytes, totalBytes);
+                }
+
+                @Override
+                public void onDownloadFinished(boolean success, boolean usedCache) {
+                }
+            })) {
+                Log.i(TAG, "Successfully downloaded libunity for version " + version + " and ABI " + targetGameAbi);
+                FusionLog.i(this, TAG, "Successfully downloaded libunity for version " + version + " and ABI " + targetGameAbi);
+            } else {
+                Log.e(TAG, "Failed to download libunity for version " + version + " and ABI " + targetGameAbi + ", falling back to original.");
+                FusionLog.e(this, TAG, "Failed to download libunity, falling back to original.");
+                useOriginalLibUnity = true;
+            }
+        }
+
+        setPhaseStatus(getString(R.string.bootstrap_status_extracting_runtime));
         File dotnetDir = new File(appDataDir, "dotnet");
         File bepInExDir = new File(dataOnSdCard, "BepInEx");
+
         Utilities.extractZipFromAssets(appContext, "BepInEx-arm64.zip", bepInExDir);
         Utilities.extractZipFromAssets(appContext, "dotnet-arm64.zip", dotnetDir);
 
-        setPhaseStatus("Registering libraries...");
+        setPhaseStatus(getString(R.string.bootstrap_status_registering_libraries));
         File[] nativeLibs = new File(gameLibDir).listFiles();
         if (nativeLibs != null) {
-            for (File f : nativeLibs) {
-                String name = f.getName();
-                if (name.startsWith("lib") && name.endsWith(".so")) {
-                    NativeLibraryManager.addGameLibrary(name.substring(3, name.length() - 3));
+            for (File file : nativeLibs) {
+                String name = file.getName();
+                if (name.startsWith("lib") && name.endsWith(".so") && name.length() > 6) {
+                    String extractedName = name.substring(3, name.length() - 3);
+                    NativeLibraryManager.addGameLibrary(extractedName);
                 }
             }
         } else {
-            Log.e(TAG, "[Bootstrap] No native libs found!");
+            Log.e(TAG, "Failed to list game native libraries! BepInEx may not work correctly.");
+            FusionLog.e(this, TAG, "Failed to list game native libraries!");
         }
 
         FusionConfig config = new FusionConfig(
-                gameLibDir, appLibDir, appDataDir.getAbsolutePath(),
-                bepInExDir.getAbsolutePath(), dotnetDir.getAbsolutePath(),
-                copiedData.getAbsolutePath(), "2017.0.0", true
+                gameLibDir,
+                appLibDir,
+                appDataDir.getAbsolutePath(),
+                bepInExDir.getAbsolutePath(),
+                dotnetDir.getAbsolutePath(),
+                copiedData.getAbsolutePath(),
+                version,
+                useOriginalLibUnity
         );
+
         return new PreparedFusionState(targetPackage, config);
     }
 
     private void applyGlobalMetadataOverride(File dataOnSdCard, File copiedData) {
-        File override = new File(dataOnSdCard, GLOBAL_METADATA_FILE);
-        if (!override.isFile()) return;
-        File target = new File(new File(copiedData, "Managed/Metadata"), GLOBAL_METADATA_FILE);
+        File overrideMetadata = new File(dataOnSdCard, GLOBAL_METADATA_FILE);
+        if (!overrideMetadata.isFile()) {
+            Log.i(TAG, "No global-metadata override found at " + overrideMetadata.getAbsolutePath());
+            return;
+        }
+
+        File targetMetadata = new File(new File(copiedData, "Managed/Metadata"), GLOBAL_METADATA_FILE);
         try {
-            copyFile(override, target);
-            Log.i(TAG, "[Bootstrap] global-metadata override applied");
+            copyFile(overrideMetadata, targetMetadata);
+            Log.i(TAG, "Applied global-metadata override from " + overrideMetadata.getAbsolutePath());
         } catch (IOException e) {
-            throw new IllegalStateException("Metadata override failed", e);
+            throw new IllegalStateException("Failed to apply global-metadata override from "
+                    + overrideMetadata.getAbsolutePath(), e);
         }
     }
 
-    private static void copyFile(File src, File dst) throws IOException {
-        File parent = dst.getParentFile();
-        if (parent != null && !parent.exists() && !parent.mkdirs()) throw new IOException("mkdirs failed");
-        byte[] buf = new byte[8192];
-        try (FileInputStream in = new FileInputStream(src); FileOutputStream out = new FileOutputStream(dst, false)) {
-            int n; while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
+    private static void copyFile(File source, File target) throws IOException {
+        File parent = target.getParentFile();
+        if (parent != null && !parent.exists() && !parent.mkdirs()) {
+            throw new IOException("Failed to create parent directory: " + parent.getAbsolutePath());
+        }
+
+        byte[] buffer = new byte[8192];
+        try (FileInputStream in = new FileInputStream(source);
+             FileOutputStream out = new FileOutputStream(target, false)) {
+            int count;
+            while ((count = in.read(buffer)) != -1) {
+                out.write(buffer, 0, count);
+            }
         }
     }
 
-    private record PreparedFusionState(String targetPackage, FusionConfig config) {}
+    private record PreparedFusionState(String targetPackage, FusionConfig config) { }
+
+    private String resolveTargetGameAbi(String gameLibDir) {
+        if (gameLibDir == null || gameLibDir.isEmpty()) {
+            return null;
+        }
+        String abi = new File(gameLibDir).getName();
+        if (abi.isEmpty()) {
+            return null;
+        }
+        return abi;
+    }
 
     private int resolveTargetOrientation(ComponentName launcher) {
         try {
-            ActivityInfo info = getPackageManager().getActivityInfo(launcher, 0);
-            if (info.screenOrientation == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            android.content.pm.ActivityInfo info = getPackageManager().getActivityInfo(launcher, 0);
+            if (info.screenOrientation == android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+                return android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
             return info.screenOrientation;
-        } catch (PackageManager.NameNotFoundException e) { return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE; }
+        } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+            return android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+        }
     }
-            }
+}

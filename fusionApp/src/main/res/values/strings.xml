@@ -9,7 +9,7 @@
     <string name="settings_title">Settings</string>
     <string name="settings_action_back">Back</string>
     <string name="settings_libunity_title">Download unstripped libunity</string>
-    <string name="settings_libunity_desc">You should turn this on if the game you\'re using crashes due to Unity getting mad.</string>
+    <string name="settings_libunity_desc">You should turn this on if the game you're using crashes due to Unity getting mad.</string>
     <string name="selector_empty_not_configured">No supported packages configured..</string>
     <string name="selector_empty_not_installed">No supported packages are currently installed.</string>
     <string name="selector_storage_permission_prompt">Grant "All files access" so Fusion Core can write BepInEx files to Documents.</string>
@@ -26,16 +26,4 @@
     <string name="bootstrap_status_launching">Launching game…</string>
     <string name="bootstrap_status_error">Launch failed</string>
     <string name="bootstrap_download_progress">%1$d%% (%2$s / %3$s)</string>
-    <string name="default_web_client_id">https://accounts.innersloth.com</string>
-    <string name="selector_empty_text">No available games found or the list is empty.</string>
-    <string name="btn_launch">Start</string>
-    <string name="btn_auth">Authorization Innersloth</string>
-    <string name="auth_title">Authorization Account</string>
-    <string name="auth_description">Paste the authorization link or use the automatic Deep Link interception.</string>
-    <string name="auth_paste_hint">Paste the URL with the token or mergeId</string>
-    <string name="auth_submit">Confirm</string>
-    <string name="auth_success">Authorization saved successfully</string>
-    <string name="auth_error">Invalid link or token format</string>
-    <string name="bootstrap_loading">Launch FusionCore and prepare the environment.</string>
-    <string name="bootstrap_error">FusionCore initialization error.</string>
 </resources>

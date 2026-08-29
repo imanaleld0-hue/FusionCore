@@ -4,4 +4,11 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
+    
+    <style name="UnityThemeSelector" parent="Theme.Material3.Dark.NoActionBar">
+       <item name="android:statusBarColor">@android:color/transparent</item>
+       <item name="android:navigationBarColor">@android:color/transparent</item>
+       <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+       <item name="android:windowNoTitle">true</item>
+    </style>
 </resources>

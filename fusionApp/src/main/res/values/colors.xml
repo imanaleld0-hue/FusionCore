@@ -18,4 +18,5 @@
     <color name="auth_button_primary">#FF4285F4</color>
     <color name="auth_button_secondary">#FF3C4043</color>
     <color name="auth_accent">#FF8AB4F8</color>
+    <color name="bootstrap_error">#FFFF5252</color>
 </resources>

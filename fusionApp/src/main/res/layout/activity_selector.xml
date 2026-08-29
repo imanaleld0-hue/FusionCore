@@ -6,14 +6,12 @@
     android:orientation="vertical"
     android:background="?android:attr/colorBackground"
     android:padding="16dp">
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingBottom="6dp">
-
         <TextView
             android:id="@+id/selector_title"
             android:layout_width="0dp"
@@ -23,7 +21,22 @@
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="24sp"
             android:textStyle="bold" />
-
+        <ImageButton
+            android:id="@+id/selector_action_logs"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:src="@drawable/ic_settings"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:scaleType="centerInside"
+            android:contentDescription="@string/selector_action_logs" />
+        <ImageButton
+            android:id="@+id/selector_action_mods"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:src="@drawable/ic_settings"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:scaleType="centerInside"
+            android:contentDescription="@string/selector_action_mods" />
         <ImageButton
             android:id="@+id/selector_action_settings"
             android:layout_width="44dp"
@@ -32,9 +45,7 @@
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:scaleType="centerInside"
             android:contentDescription="@string/selector_action_settings" />
-
     </LinearLayout>
-
     <TextView
         android:id="@+id/selector_subtitle"
         android:layout_width="match_parent"
@@ -43,7 +54,6 @@
         android:textColor="?android:attr/textColorSecondary"
         android:textSize="14sp"
         android:paddingBottom="14dp" />
-
     <ListView
         android:id="@+id/selector_list"
         android:layout_width="match_parent"
@@ -54,7 +64,6 @@
         android:clipToPadding="false"
         android:paddingTop="2dp"
         android:paddingBottom="6dp" />
-
     <TextView
         android:id="@+id/selector_empty"
         android:layout_width="match_parent"
@@ -63,6 +72,4 @@
         android:text="@string/selector_empty_not_installed"
         android:textColor="?android:attr/textColorSecondary"
         android:visibility="gone" />
-
 </LinearLayout>
-

@@ -1,48 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/selector_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
-    android:padding="24dp"
-    android:background="?android:attr/colorBackground">
+    android:background="?android:attr/colorBackground"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="6dp">
+
+        <TextView
+            android:id="@+id/selector_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/selector_title"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/selector_action_settings"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:src="@drawable/ic_settings"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:scaleType="centerInside"
+            android:contentDescription="@string/selector_action_settings" />
+
+    </LinearLayout>
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/app_name"
-        android:textAppearance="?attr/textAppearanceHeadlineLarge"
-        android:layout_marginBottom="32dp"/>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_launch"
+        android:id="@+id/selector_subtitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Launch Game"
-        style="?attr/materialButtonStyle"/>
+        android:text="@string/selector_subtitle"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="14sp"
+        android:paddingBottom="14dp" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_mods"
+    <ListView
+        android:id="@+id/selector_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="0dp"
+        android:clipToPadding="false"
+        android:paddingTop="2dp"
+        android:paddingBottom="6dp" />
+
+    <TextView
+        android:id="@+id/selector_empty"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Mod Projects"
-        android:layout_marginTop="16dp"
-        style="?attr/materialButtonStyle"/>
+        android:gravity="center_horizontal"
+        android:text="@string/selector_empty_not_installed"
+        android:textColor="?android:attr/textColorSecondary"
+        android:visibility="gone" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_settings"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Settings"
-        android:layout_marginTop="16dp"
-        style="?attr/materialButtonOutlinedStyle"/>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_logs"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Logs"
-        android:layout_marginTop="16dp"
-        style="?attr/materialButtonOutlinedStyle"/>
 </LinearLayout>
+

@@ -1,11 +1,254 @@
 package dev.allofus.fusioncore;
-import android.content.*; import android.net.Uri; import android.os.*; import android.provider.Settings; import android.widget.*; import androidx.activity.result.ActivityResultLauncher; import androidx.activity.result.contract.ActivityResultContracts; import androidx.core.content.ContextCompat; import dev.allofus.fusioncore.ui.*;
-public class SelectorActivity extends BaseFullscreenActivity {
- private static final int REQUEST=1001; private static final String GAME="com.innersloth.spacemafia"; private String pending;
- @Override protected void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_selector);((Button)findViewById(R.id.btn_launch)).setOnClickListener(v->launchGame());((Button)findViewById(R.id.btn_mods)).setOnClickListener(v->startActivity(new Intent(this,ModProjectsActivity.class)));((Button)findViewById(R.id.btn_settings)).setOnClickListener(v->startActivity(new Intent(this,SettingsActivity.class)));((Button)findViewById(R.id.btn_logs)).setOnClickListener(v->startActivity(new Intent(this,LogsViewerActivity.class)));}
- private void launchGame(){try{if(getPackageManager().getLaunchIntentForPackage(GAME)==null){Toast.makeText(this,"Among Us is not installed",Toast.LENGTH_LONG).show();return;}maybe(GAME);}catch(Throwable e){Toast.makeText(this,"Launch error: "+e.getMessage(),Toast.LENGTH_LONG).show();}}
- private final ActivityResultLauncher<String[]> perms=registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),m->{String p=pending;pending=null;if(p!=null)bootstrap(p);});
- private void maybe(String pkg){if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.R&&!Environment.isExternalStorageManager()){pending=pkg;try{Intent i=new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);i.setData(Uri.parse("package:"+getPackageName()));startActivityForResult(i,REQUEST);}catch(Exception e){startActivityForResult(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION),REQUEST);}return;}bootstrap(pkg);}
- private void bootstrap(String pkg){Intent i=new Intent(this,BootstrapActivity.class);i.putExtra(BootstrapActivity.EXTRA_TARGET_PACKAGE,pkg);i.putExtra(BootstrapActivity.EXTRA_USE_ORIGINAL_LIBUNITY,true);startActivity(i);}
- @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(r==REQUEST&&pending!=null&&(Build.VERSION.SDK_INT<Build.VERSION_CODES.R||Environment.isExternalStorageManager())){String p=pending;pending=null;bootstrap(p);}}
+
+
+import android.app.Activity;
+import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Environment;
+import android.provider.Settings;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+import dev.allofus.fusioncore.ui.LogsViewerActivity;
+import dev.allofus.fusioncore.ui.SettingsActivity;
+import dev.allofus.fusioncore.ui.ModProjectsActivity;
+
+import androidx.annotation.NonNull;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+public class SelectorActivity extends Activity {
+    
+    private static final String TAG = "FusionCore";
+    private static final int REQUEST_MANAGE_EXTERNAL_STORAGE = 1001;
+
+    private String pendingLaunchPackage;
+    private ImageButton settingsButton;
+    private File logFile;
+
+
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    
+super.onCreate(savedInstanceState);
+
+LogcatCollector.start(this);  
+setContentView(R.layout.activity_selector);
+
+        View root = findViewById(R.id.selector_root);
+        int basePadding = Math.round(getResources().getDisplayMetrics().density * 16f);
+        Utilities.applyWindowInsets(root, basePadding);
+
+        ListView listView = findViewById(R.id.selector_list);
+        TextView emptyView = findViewById(R.id.selector_empty);
+        listView.setEmptyView(emptyView);
+
+        List<AppEntry> installedTargets = resolveInstalledTargets();
+        Drawable defaultIcon = getPackageManager().getDefaultActivityIcon();
+        ArrayAdapter<AppEntry> adapter = new ArrayAdapter<>(
+                this,
+                R.layout.item_selector_target,
+                installedTargets
+        ) {
+            @NonNull
+            @Override
+            public View getView(int position, View convertView, @NonNull ViewGroup parent) {
+                RowHolder holder;
+                if (convertView == null) {
+                    convertView = LayoutInflater.from(getContext())
+                            .inflate(R.layout.item_selector_target, parent, false);
+                    holder = new RowHolder(
+                            convertView.findViewById(R.id.row_icon),
+                            convertView.findViewById(R.id.row_name),
+                            convertView.findViewById(R.id.row_package),
+                            convertView.findViewById(R.id.row_version)
+                    );
+                    convertView.setTag(holder);
+                } else {
+                    holder = (RowHolder) convertView.getTag();
+                }
+
+                AppEntry entry = getItem(position);
+                if (entry != null) {
+                    holder.icon.setImageDrawable(entry.icon != null ? entry.icon : defaultIcon);
+                    holder.name.setText(entry.label);
+                    holder.packageName.setText(entry.packageName);
+                    holder.version.setText(Utilities.formatVersionText(entry.versionName, entry.versionCode));
+                }
+                return convertView;
+            }
+        };
+        listView.setAdapter(adapter);
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            AppEntry selected = installedTargets.get(position);
+            maybeLaunchBootstrap(selected.packageName);
+        });
+
+        settingsButton = findViewById(R.id.selector_action_settings);
+        settingsButton.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (pendingLaunchPackage != null && hasExternalStorageManagerAccess()) {
+            String packageName = pendingLaunchPackage;
+            pendingLaunchPackage = null;
+            launchBootstrap(packageName);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode != REQUEST_MANAGE_EXTERNAL_STORAGE || pendingLaunchPackage == null) {
+            return;
+        }
+
+        if (hasExternalStorageManagerAccess()) {
+            String packageName = pendingLaunchPackage;
+            pendingLaunchPackage = null;
+            launchBootstrap(packageName);
+            return;
+        }
+
+        Toast.makeText(this, getString(R.string.selector_storage_permission_required), Toast.LENGTH_LONG).show();
+    }
+
+    private List<AppEntry> resolveInstalledTargets() {
+        PackageManager pm = getPackageManager();
+        List<AppEntry> result = new ArrayList<>();
+        List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+
+        for (ApplicationInfo app : apps) {
+            File libs = new File(app.nativeLibraryDir);
+            File unity = new File(libs, "libunity.so");
+            File il2cpp = new File(libs, "libil2cpp.so");
+
+            if (!unity.exists() || !il2cpp.exists()) {
+                continue;
+            }
+
+            if (pm.getLaunchIntentForPackage(app.packageName) == null) {
+                continue;
+            }
+
+            String label = app.packageName;
+            Drawable icon = pm.getDefaultActivityIcon();
+            String versionName = "Unknown";
+            long versionCode = 0L;
+            try {
+                ApplicationInfo info = pm.getApplicationInfo(app.packageName, 0);
+                label = pm.getApplicationLabel(info).toString();
+                icon = pm.getApplicationIcon(info);
+
+                PackageInfo packageInfo;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    packageInfo = pm.getPackageInfo(app.packageName, PackageManager.PackageInfoFlags.of(0));
+                } else {
+                    packageInfo = pm.getPackageInfo(app.packageName, 0);
+                }
+                if (packageInfo.versionName != null && !packageInfo.versionName.isEmpty()) {
+                    versionName = packageInfo.versionName;
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    versionCode = packageInfo.getLongVersionCode();
+                } else {
+                    versionCode = packageInfo.versionCode;
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to resolve metadata for package: " + app.packageName, e);
+            }
+
+            Log.i(TAG, "Found installed target: " + app.packageName + " (" + label + ")");
+            result.add(new AppEntry(app.packageName, label, icon, versionName, versionCode));
+        }
+
+        return result;
+    }
+
+    private void launchBootstrap(String packageName) {
+        Intent intent = new Intent(this, BootstrapActivity.class);
+        intent.putExtra(BootstrapActivity.EXTRA_TARGET_PACKAGE, packageName);
+        intent.putExtra(BootstrapActivity.EXTRA_USE_ORIGINAL_LIBUNITY,
+                !FusionSettings.isDownloadUnstrippedLibUnity(this));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        startActivity(intent);
+        overridePendingTransition(0, 0);
+        finish();
+        overridePendingTransition(0, 0);
+    }
+
+    private void maybeLaunchBootstrap(String packageName) {
+        if (!hasExternalStorageManagerAccess()) {
+            pendingLaunchPackage = packageName;
+            requestExternalStorageManagerAccess();
+            return;
+        }
+        launchBootstrap(packageName);
+    }
+
+    private boolean hasExternalStorageManagerAccess() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            return true;
+        }
+        return Environment.isExternalStorageManager();
+    }
+
+    private void requestExternalStorageManagerAccess() {
+        Toast.makeText(this, getString(R.string.selector_storage_permission_prompt), Toast.LENGTH_LONG).show();
+        Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+        intent.setData(Uri.parse("package:" + getPackageName()));
+        try {
+            startActivityForResult(intent, REQUEST_MANAGE_EXTERNAL_STORAGE);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to open app-specific all-files access screen, opening generic page", e);
+            Intent fallbackIntent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+            try {
+                startActivityForResult(fallbackIntent, REQUEST_MANAGE_EXTERNAL_STORAGE);
+            } catch (Exception inner) {
+                Log.e(TAG, "Failed to open all-files access settings", inner);
+                Toast.makeText(this, getString(R.string.selector_storage_permission_open_failed), Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private record AppEntry(String packageName, String label, Drawable icon, String versionName,
+                            long versionCode) {
+
+        @NonNull
+        @Override
+        public String toString() {
+            if (label.equals(packageName)) {
+                return packageName;
+            }
+            return label + " (" + packageName + ")";
+        }
+    }
+
+    private record RowHolder(ImageView icon, TextView name, TextView packageName,
+                             TextView version) {
+    }
 }
